@@ -1,9 +1,10 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import { processText } from './services/textProcessor.js';
-import { exit } from 'process';
-import { getSupabase } from './services/supabaseClient.js';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import { processText } from "./services/textProcessor.js";
+import { exit } from "process";
+import helloRoutes from "./api/routes/helloRoutes.js";
+import agentRoutes from "./api/routes/agentRoutes.js";
 
 dotenv.config();
 
@@ -12,34 +13,38 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+
+// Migrated API routes
+app.use("/api/hello", helloRoutes);
+app.use("/api/agent", agentRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+app.get("/health", (req, res) => {
+  res.json({ status: "healthy", timestamp: new Date().toISOString() });
 });
 
 // Main text processing endpoint
-app.post('/api/process', async (req, res) => {
+app.post("/api/process", async (req, res) => {
   try {
     const { text } = req.body;
-    
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ 
-        error: 'Invalid input: text is required and must be a string' 
+
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({
+        error: "Invalid input: text is required and must be a string",
       });
     }
 
     if (text.length < 100) {
-      return res.status(400).json({ 
-        error: 'Text must be at least 100 characters long' 
+      return res.status(400).json({
+        error: "Text must be at least 100 characters long",
       });
     }
 
     console.log(`Processing text: ${text.length} characters`);
-    
+
     const result = await processText(text);
-    
+
     res.json({
       success: true,
       data: result,
@@ -49,15 +54,14 @@ app.post('/api/process', async (req, res) => {
         moduleCount: result.modules.modules.length,
         assignmentCount: result.assignments.assignments.length,
         requirementCount: result.requirements.requirements.length,
-        processedAt: new Date().toISOString()
-      }
+        processedAt: new Date().toISOString(),
+      },
     });
-    
   } catch (error) {
-    console.error('Processing error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error during text processing',
-      message: error instanceof Error ? error.message : 'Unknown error'
+    console.error("Processing error:", error);
+    res.status(500).json({
+      error: "Internal server error during text processing",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -145,23 +149,29 @@ app.get('/api/results/:id?', async (req, res) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: err.message 
-  });
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    console.error("Unhandled error:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      message: err.message,
+    });
+  }
+);
 
 // 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+app.use("*", (req, res) => {
+  res.status(404).json({ error: "Endpoint not found" });
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📖 Health check: http://localhost:${PORT}/health`);
   console.log(`🔧 API endpoint: http://localhost:${PORT}/api/process`);
-//   exit(0);
+  //   exit(0);
 });
-

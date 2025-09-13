@@ -1,7 +1,6 @@
-/**
- * Basic hello world endpoint
- */
-const hello = (req, res) => {
+import { Request, Response } from "express";
+
+export const hello = (req: Request, res: Response) => {
   res.status(200).json({
     message: "Hello World!",
     timestamp: new Date().toISOString(),
@@ -9,12 +8,8 @@ const hello = (req, res) => {
   });
 };
 
-/**
- * Personalized hello endpoint
- */
-const helloName = (req, res) => {
+export const helloName = (req: Request, res: Response) => {
   const { name } = req.params;
-
   if (!name) {
     return res.status(400).json({
       message: "Name parameter is required",
@@ -29,20 +24,11 @@ const helloName = (req, res) => {
   });
 };
 
-/**
- * Health check endpoint
- */
-const health = (req, res) => {
+export const health = (req: Request, res: Response) => {
   res.status(200).json({
     status: "healthy",
     message: "API is running successfully",
     timestamp: new Date().toISOString(),
     success: true,
   });
-};
-
-module.exports = {
-  hello,
-  helloName,
-  health,
 };
