@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import { processText } from './services/textProcessor.js';
 import { exit } from 'process';
 import { getSupabase } from './services/supabaseClient.js';
-
+import { generateMockData } from './mockData/generator.js';
+import { adminRouter } from "./routes/admin.js";
 dotenv.config();
 
 const app = express();
@@ -13,6 +14,44 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+app.use("/admin/metrics", adminRouter);
+
+// Mock data endpoint for Databricks-style analytics
+app.get('/api/mock-data', (req, res) => {
+  try {
+    const data = generateMockData();
+    res.json({
+      success: true,
+      data,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Mock data generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate mock data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Detailed user endpoint
+app.get('/api/detailed-user', (req, res) => {
+  try {
+    const data = generateMockData();
+    res.json({
+      success: true,
+      data: data.detailedUser,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Detailed user generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate detailed user data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

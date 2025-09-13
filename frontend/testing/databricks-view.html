@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Databricks Analytics Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.5;
+        }
+        
+        .header {
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f0f6fc;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: #21262d;
+            border-color: #30363d;
+            color: #f0f6fc;
+        }
+        
+        .tab:hover:not(.active) {
+            background: #21262d;
+            color: #c9d1d9;
+        }
+        
+        .main-content {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 16px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #58a6ff;
+            margin-bottom: 4px;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-container {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            background: #21262d;
+            padding: 16px 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f0f6fc;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            background: #21262d;
+            color: #c9d1d9;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            background: #30363d;
+            color: #f0f6fc;
+        }
+        
+        .btn-primary {
+            background: #238636;
+            border-color: #238636;
+            color: #f0f6fc;
+        }
+        
+        .btn-primary:hover {
+            background: #2ea043;
+            border-color: #2ea043;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        th {
+            background: #0d1117;
+            font-weight: 600;
+            color: #f0f6fc;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+        
+        tr:hover {
+            background: #21262d;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-success {
+            background: #1a472a;
+            color: #3fb950;
+        }
+        
+        .status-error {
+            background: #5d1a1a;
+            color: #f85149;
+        }
+        
+        .json-viewer {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 12px;
+            color: #c9d1d9;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b949e;
+        }
+        
+        .error {
+            background: #5d1a1a;
+            border: 1px solid #f85149;
+            color: #f85149;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8b949e;
+        }
+        
+        .empty-state::before {
+            content: "📊";
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+        }
+        
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #8b949e;
+            position: relative;
+        }
+        
+        .chart-bar {
+            display: flex;
+            align-items: end;
+            gap: 4px;
+            height: 100%;
+            padding: 20px;
+        }
+        
+        .bar {
+            background: linear-gradient(to top, #58a6ff, #1f6feb);
+            border-radius: 2px 2px 0 0;
+            min-width: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .bar:hover {
+            background: linear-gradient(to top, #79c0ff, #388bfd);
+        }
+        
+        .chart-line {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+        }
+        
+        .line-path {
+            fill: none;
+            stroke: #58a6ff;
+            stroke-width: 2;
+        }
+        
+        .line-dot {
+            fill: #58a6ff;
+            r: 3;
+        }
+        
+        .line-dot:hover {
+            r: 5;
+            fill: #79c0ff;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #21262d;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #58a6ff, #1f6feb);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .trend-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .trend-up { color: #3fb950; }
+        .trend-down { color: #f85149; }
+        .trend-neutral { color: #8b949e; }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+        
+        .data-item {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        
+        .data-label {
+            font-size: 11px;
+            color: #8b949e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .data-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f0f6fc;
+        }
+        
+        .sparkline {
+            height: 40px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .distribution-chart {
+            display: flex;
+            align-items: end;
+            gap: 2px;
+            height: 120px;
+            padding: 10px;
+        }
+        
+        .dist-bar {
+            background: linear-gradient(to top, #238636, #2ea043);
+            border-radius: 1px 1px 0 0;
+            min-width: 4px;
+            flex: 1;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .input-group label {
+            font-size: 12px;
+            color: #8b949e;
+            font-weight: 500;
+        }
+        
+        input[type="text"], select {
+            padding: 8px 12px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-size: 14px;
+        }
+        
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.1);
+        }
+        
+        select {
+            cursor: pointer;
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">📊 Databricks Analytics</div>
+        <div class="nav-tabs">
+            <div class="tab active" onclick="showTab('overview')">Overview</div>
+            <div class="tab" onclick="showTab('results')">Results</div>
+            <div class="tab" onclick="showTab('analytics')">Analytics</div>
+            <div class="tab" onclick="showTab('detailed-user')">👤 Detailed User</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content">
+        <div class="controls">
+            <div class="input-group">
+                <label>Data Source</label>
+                <select id="dataSource" onchange="switchDataSource()">
+                    <option value="mock">📊 Mock Analytics Data</option>
+                    <option value="supabase">☁️ Supabase Results</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>API Endpoint</label>
+                <input type="text" id="apiUrl" value="http://localhost:3001/api/mock-data" />
+            </div>
+            <button class="btn btn-primary" onclick="loadData()">🔄 Refresh Data</button>
+        </div>
+            
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📈 Processing Metrics</div>
+                    </div>
+                    <div class="metric-grid" id="metrics">
+                        <div class="metric">
+                            <div class="metric-value" id="totalResults">-</div>
+                            <div class="metric-label">Total Results</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="successRate">-</div>
+                            <div class="metric-label">Success Rate</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="avgChunks">-</div>
+                            <div class="metric-label">Avg Chunks</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="avgModules">-</div>
+                            <div class="metric-label">Avg Modules</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="avgRequirements">-</div>
+                            <div class="metric-label">Avg Requirements</div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-value" id="avgTextLength">-</div>
+                            <div class="metric-label">Avg Text Length</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📊 Processing Volume Trends</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-bar" id="volumeChart">
+                            <!-- Volume bars will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🎯 Performance Analytics</div>
+                    </div>
+                    <div class="data-grid" id="performanceMetrics">
+                        <!-- Performance metrics will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📈 Text Length Distribution</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="distribution-chart" id="textLengthChart">
+                            <!-- Distribution bars will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results" class="tab-content hidden">
+            <div class="table-container">
+                <div class="table-header">
+                    <div class="table-title">📋 Processing Results</div>
+                    <div class="table-actions">
+                        <button class="btn" onclick="exportData()">📥 Export</button>
+                        <button class="btn btn-primary" onclick="loadData()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div id="resultsTable">
+                    <div class="loading">Loading results...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content hidden">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🔍 Module Distribution Analysis</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-bar" id="moduleDistributionChart">
+                            <!-- Module distribution bars will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📊 Requirement Priority Breakdown</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="distribution-chart" id="priorityChart">
+                            <!-- Priority distribution bars will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">⚡ Processing Efficiency</div>
+                    </div>
+                    <div class="data-grid" id="efficiencyMetrics">
+                        <!-- Efficiency metrics will be generated here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📈 Content Complexity Trends</div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-line" id="complexityChart">
+                            <!-- Complexity trend line will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed User Tab -->
+        <div id="detailed-user" class="tab-content hidden">
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadDetailedUser()">🔄 Load Detailed User Profile</button>
+            </div>
+            <div id="detailedUserContent">
+                <div class="loading">Click "Load Detailed User Profile" to see comprehensive user data</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allResults = [];
+        let mockData = null;
+        let currentDataSource = 'mock';
+        
+        function switchDataSource() {
+            const dataSource = document.getElementById('dataSource').value;
+            const apiUrl = document.getElementById('apiUrl');
+            
+            if (dataSource === 'mock') {
+                apiUrl.value = 'http://localhost:3001/api/mock-data';
+                currentDataSource = 'mock';
+            } else {
+                apiUrl.value = 'http://localhost:3001/api/results';
+                currentDataSource = 'supabase';
+            }
+            
+            loadData();
+        }
+        
+        async function loadData() {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const loadingEl = document.getElementById('resultsTable');
+            
+            try {
+                loadingEl.innerHTML = '<div class="loading">Loading data...</div>';
+                
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                if (currentDataSource === 'mock') {
+                    mockData = data.data;
+                    allResults = []; // Clear Supabase results
+                    updateMockDataOverview();
+                    updateMockDataTable();
+                } else {
+                    allResults = Array.isArray(data.data) ? data.data : [];
+                    mockData = null; // Clear mock data
+                    updateOverview();
+                    updateResultsTable();
+                }
+                
+            } catch (error) {
+                loadingEl.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function updateOverview() {
+            const total = allResults.length;
+            const successful = allResults.filter(r => r.success).length;
+            const successRate = total > 0 ? Math.round((successful / total) * 100) : 0;
+            
+            const avgChunks = allResults.length > 0 
+                ? Math.round(allResults.reduce((sum, r) => sum + (r.metadata?.chunkCount || 0), 0) / allResults.length)
+                : 0;
+                
+            const avgModules = allResults.length > 0 
+                ? Math.round(allResults.reduce((sum, r) => sum + (r.metadata?.moduleCount || 0), 0) / allResults.length)
+                : 0;
+                
+            const avgRequirements = allResults.length > 0 
+                ? Math.round(allResults.reduce((sum, r) => sum + (r.metadata?.requirementCount || 0), 0) / allResults.length)
+                : 0;
+                
+            const avgTextLength = allResults.length > 0 
+                ? Math.round(allResults.reduce((sum, r) => sum + (r.metadata?.textLength || 0), 0) / allResults.length)
+                : 0;
+            
+            document.getElementById('totalResults').textContent = total;
+            document.getElementById('successRate').textContent = `${successRate}%`;
+            document.getElementById('avgChunks').textContent = avgChunks;
+            document.getElementById('avgModules').textContent = avgModules;
+            document.getElementById('avgRequirements').textContent = avgRequirements;
+            document.getElementById('avgTextLength').textContent = avgTextLength.toLocaleString();
+            
+            // Update charts and analytics
+            updateVolumeChart();
+            updatePerformanceMetrics();
+            updateTextLengthChart();
+            updateAnalyticsCharts();
+        }
+        
+        function updateVolumeChart() {
+            const chart = document.getElementById('volumeChart');
+            if (allResults.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            // Group results by day
+            const dailyData = {};
+            allResults.forEach(result => {
+                if (result.created_at) {
+                    const date = new Date(result.created_at).toDateString();
+                    dailyData[date] = (dailyData[date] || 0) + 1;
+                }
+            });
+            
+            const maxCount = Math.max(...Object.values(dailyData));
+            const dates = Object.keys(dailyData).slice(-7); // Last 7 days
+            
+            chart.innerHTML = dates.map(date => {
+                const count = dailyData[date] || 0;
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                return `<div class="bar" style="height: ${height}%" title="${date}: ${count} results"></div>`;
+            }).join('');
+        }
+        
+        function updatePerformanceMetrics() {
+            const container = document.getElementById('performanceMetrics');
+            if (allResults.length === 0) {
+                container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 20px;">No data available</div>';
+                return;
+            }
+            
+            const textLengths = allResults.map(r => r.metadata?.textLength || 0);
+            const chunkCounts = allResults.map(r => r.metadata?.chunkCount || 0);
+            const moduleCounts = allResults.map(r => r.metadata?.moduleCount || 0);
+            
+            const maxTextLength = Math.max(...textLengths);
+            const maxChunks = Math.max(...chunkCounts);
+            const maxModules = Math.max(...moduleCounts);
+            
+            container.innerHTML = `
+                <div class="data-item">
+                    <div class="data-label">Max Text Length</div>
+                    <div class="data-value">${maxTextLength.toLocaleString()}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(maxTextLength / Math.max(maxTextLength, 10000)) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Max Chunks</div>
+                    <div class="data-value">${maxChunks}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(maxChunks / Math.max(maxChunks, 10)) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Max Modules</div>
+                    <div class="data-value">${maxModules}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(maxModules / Math.max(maxModules, 10)) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Processing Efficiency</div>
+                    <div class="data-value">${Math.round((allResults.filter(r => r.success).length / allResults.length) * 100)}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(allResults.filter(r => r.success).length / allResults.length) * 100}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateTextLengthChart() {
+            const chart = document.getElementById('textLengthChart');
+            if (allResults.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            // Create buckets for text length distribution
+            const buckets = [0, 500, 1000, 2000, 5000, 10000, 20000, 50000];
+            const bucketCounts = new Array(buckets.length - 1).fill(0);
+            
+            allResults.forEach(result => {
+                const textLength = result.metadata?.textLength || 0;
+                for (let i = 0; i < buckets.length - 1; i++) {
+                    if (textLength >= buckets[i] && textLength < buckets[i + 1]) {
+                        bucketCounts[i]++;
+                        break;
+                    }
+                }
+            });
+            
+            const maxCount = Math.max(...bucketCounts);
+            
+            chart.innerHTML = bucketCounts.map((count, i) => {
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                const label = `${buckets[i]}-${buckets[i + 1]}`;
+                return `<div class="dist-bar" style="height: ${height}%" title="${label}: ${count} results"></div>`;
+            }).join('');
+        }
+        
+        function updateAnalyticsCharts() {
+            updateModuleDistributionChart();
+            updatePriorityChart();
+            updateEfficiencyMetrics();
+            updateComplexityChart();
+        }
+        
+        function updateModuleDistributionChart() {
+            const chart = document.getElementById('moduleDistributionChart');
+            if (allResults.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            const moduleCounts = allResults.map(r => r.metadata?.moduleCount || 0);
+            const distribution = {};
+            moduleCounts.forEach(count => {
+                distribution[count] = (distribution[count] || 0) + 1;
+            });
+            
+            const maxCount = Math.max(...Object.values(distribution));
+            const sortedKeys = Object.keys(distribution).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            chart.innerHTML = sortedKeys.map(key => {
+                const count = distribution[key];
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                return `<div class="bar" style="height: ${height}%" title="${key} modules: ${count} results"></div>`;
+            }).join('');
+        }
+        
+        function updatePriorityChart() {
+            const chart = document.getElementById('priorityChart');
+            if (allResults.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            const priorities = { high: 0, medium: 0, low: 0 };
+            allResults.forEach(result => {
+                if (result.data?.requirements?.requirements) {
+                    result.data.requirements.requirements.forEach(req => {
+                        if (req.priority && priorities.hasOwnProperty(req.priority)) {
+                            priorities[req.priority]++;
+                        }
+                    });
+                }
+            });
+            
+            const maxCount = Math.max(...Object.values(priorities));
+            const priorityOrder = ['high', 'medium', 'low'];
+            
+            chart.innerHTML = priorityOrder.map(priority => {
+                const count = priorities[priority];
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                return `<div class="dist-bar" style="height: ${height}%" title="${priority}: ${count} requirements"></div>`;
+            }).join('');
+        }
+        
+        function updateEfficiencyMetrics() {
+            const container = document.getElementById('efficiencyMetrics');
+            if (allResults.length === 0) {
+                container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 20px;">No data available</div>';
+                return;
+            }
+            
+            const successful = allResults.filter(r => r.success);
+            const avgProcessingTime = successful.length > 0 
+                ? successful.reduce((sum, r) => {
+                    const created = new Date(r.created_at);
+                    const processed = new Date(r.metadata?.processedAt);
+                    return sum + (processed - created);
+                  }, 0) / successful.length / 1000 // Convert to seconds
+                : 0;
+            
+            const avgChunksPerModule = successful.length > 0
+                ? successful.reduce((sum, r) => {
+                    const chunks = r.metadata?.chunkCount || 0;
+                    const modules = r.metadata?.moduleCount || 1;
+                    return sum + (chunks / modules);
+                  }, 0) / successful.length
+                : 0;
+            
+            container.innerHTML = `
+                <div class="data-item">
+                    <div class="data-label">Avg Processing Time</div>
+                    <div class="data-value">${Math.round(avgProcessingTime)}s</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Chunks per Module</div>
+                    <div class="data-value">${avgChunksPerModule.toFixed(1)}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Success Rate</div>
+                    <div class="data-value">${Math.round((successful.length / allResults.length) * 100)}%</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Total Requirements</div>
+                    <div class="data-value">${successful.reduce((sum, r) => sum + (r.metadata?.requirementCount || 0), 0)}</div>
+                </div>
+            `;
+        }
+        
+        function updateComplexityChart() {
+            const chart = document.getElementById('complexityChart');
+            if (allResults.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            // Calculate complexity score (text length * modules / chunks)
+            const complexityData = allResults
+                .filter(r => r.success && r.metadata)
+                .map(r => {
+                    const textLength = r.metadata.textLength || 0;
+                    const modules = r.metadata.moduleCount || 1;
+                    const chunks = r.metadata.chunkCount || 1;
+                    return (textLength * modules) / chunks;
+                })
+                .slice(-10); // Last 10 results
+            
+            if (complexityData.length === 0) {
+                chart.innerHTML = '<div style="color: #8b949e;">No complexity data available</div>';
+                return;
+            }
+            
+            const maxComplexity = Math.max(...complexityData);
+            const minComplexity = Math.min(...complexityData);
+            const range = maxComplexity - minComplexity;
+            
+            chart.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 200 100">
+                    <polyline class="line-path" points="${complexityData.map((value, i) => {
+                        const x = (i / (complexityData.length - 1)) * 180 + 10;
+                        const y = 90 - ((value - minComplexity) / range) * 70;
+                        return `${x},${y}`;
+                    }).join(' ')}" />
+                    ${complexityData.map((value, i) => {
+                        const x = (i / (complexityData.length - 1)) * 180 + 10;
+                        const y = 90 - ((value - minComplexity) / range) * 70;
+                        return `<circle class="line-dot" cx="${x}" cy="${y}" title="Complexity: ${Math.round(value)}" />`;
+                    }).join('')}
+                </svg>
+            `;
+        }
+        
+        function updateResultsTable() {
+            const container = document.getElementById('resultsTable');
+            
+            if (allResults.length === 0) {
+                container.innerHTML = '<div class="empty-state">No results found</div>';
+                return;
+            }
+            
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Text Length</th>
+                            <th>Chunks</th>
+                            <th>Modules</th>
+                            <th>Requirements</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${allResults.map(result => `
+                            <tr>
+                                <td><code>${result.id || 'N/A'}</code></td>
+                                <td><span class="status-badge ${result.success ? 'status-success' : 'status-error'}">${result.success ? 'Success' : 'Failed'}</span></td>
+                                <td>${result.created_at ? new Date(result.created_at).toLocaleString() : 'N/A'}</td>
+                                <td>${result.metadata?.textLength || 'N/A'}</td>
+                                <td>${result.metadata?.chunkCount || 'N/A'}</td>
+                                <td>${result.metadata?.moduleCount || 'N/A'}</td>
+                                <td>${result.metadata?.requirementCount || 'N/A'}</td>
+                                <td>
+                                    <button class="btn" onclick="viewDetails('${result.id}')">👁️ View</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+        
+        function viewDetails(id) {
+            const result = allResults.find(r => r.id === id);
+            if (!result) return;
+            
+            const details = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; max-width: 800px; max-height: 80vh; overflow-y: auto; width: 100%;">
+                        <div style="padding: 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="color: #f0f6fc;">Result Details: ${id}</h3>
+                            <button class="btn" onclick="closeDetails()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div style="margin-bottom: 20px;">
+                                <h4 style="color: #f0f6fc; margin-bottom: 8px;">Metadata</h4>
+                                <div class="json-viewer">${JSON.stringify(result.metadata, null, 2)}</div>
+                            </div>
+                            <div>
+                                <h4 style="color: #f0f6fc; margin-bottom: 8px;">Data</h4>
+                                <div class="json-viewer">${JSON.stringify(result.data, null, 2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', details);
+        }
+        
+        function closeDetails() {
+            const modal = document.querySelector('[style*="position: fixed"]');
+            if (modal) modal.remove();
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.remove('hidden');
+            event.target.classList.add('active');
+        }
+        
+        function exportData() {
+            if (allResults.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            
+            const csv = [
+                ['ID', 'Status', 'Created', 'Text Length', 'Chunks', 'Modules', 'Requirements'],
+                ...allResults.map(r => [
+                    r.id || 'N/A',
+                    r.success ? 'Success' : 'Failed',
+                    r.created_at || 'N/A',
+                    r.metadata?.textLength || 'N/A',
+                    r.metadata?.chunkCount || 'N/A',
+                    r.metadata?.moduleCount || 'N/A',
+                    r.metadata?.requirementCount || 'N/A'
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `processing-results-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Mock data visualization functions
+        function updateMockDataOverview() {
+            if (!mockData) return;
+            
+            const { summary, performance } = mockData;
+            
+            // Update main metrics
+            document.getElementById('totalResults').textContent = summary.total_users.toLocaleString();
+            document.getElementById('successRate').textContent = `${Math.round(summary.completion_rate * 100)}%`;
+            document.getElementById('avgChunks').textContent = summary.total_lessons.toLocaleString();
+            document.getElementById('avgModules').textContent = summary.total_quizzes.toLocaleString();
+            document.getElementById('avgRequirements').textContent = summary.active_users_today.toLocaleString();
+            document.getElementById('avgTextLength').textContent = Math.round(summary.avg_quiz_score).toString();
+            
+            // Update charts with mock data
+            updateMockVolumeChart();
+            updateMockPerformanceMetrics();
+            updateMockTextLengthChart();
+            updateMockAnalyticsCharts();
+        }
+        
+        function updateMockVolumeChart() {
+            const chart = document.getElementById('volumeChart');
+            if (!mockData?.performance) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            const performance = mockData.performance.slice(-7); // Last 7 days
+            const maxUsers = Math.max(...performance.map(p => p.active_users));
+            
+            chart.innerHTML = performance.map(day => {
+                const height = (day.active_users / maxUsers) * 100;
+                const date = new Date(day.date).toLocaleDateString();
+                return `<div class="bar" style="height: ${height}%" title="${date}: ${day.active_users} users"></div>`;
+            }).join('');
+        }
+        
+        function updateMockPerformanceMetrics() {
+            const container = document.getElementById('performanceMetrics');
+            if (!mockData?.performance) {
+                container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 20px;">No data available</div>';
+                return;
+            }
+            
+            const performance = mockData.performance;
+            const latest = performance[performance.length - 1];
+            const avgRevenue = performance.reduce((sum, p) => sum + p.revenue, 0) / performance.length;
+            const avgChurn = performance.reduce((sum, p) => sum + p.churn_rate, 0) / performance.length;
+            
+            container.innerHTML = `
+                <div class="data-item">
+                    <div class="data-label">Daily Active Users</div>
+                    <div class="data-value">${latest.active_users.toLocaleString()}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(latest.active_users / 1200) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Lessons Completed</div>
+                    <div class="data-value">${latest.lessons_completed.toLocaleString()}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(latest.lessons_completed / 400) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Daily Revenue</div>
+                    <div class="data-value">$${latest.revenue.toLocaleString()}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(latest.revenue / 15000) * 100}%"></div>
+                    </div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Churn Rate</div>
+                    <div class="data-value">${(avgChurn * 100).toFixed(1)}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${(avgChurn / 0.08) * 100}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateMockTextLengthChart() {
+            const chart = document.getElementById('textLengthChart');
+            if (!mockData?.lessons) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            // Group lessons by duration buckets
+            const buckets = [15, 30, 45, 60, 90, 120];
+            const bucketCounts = new Array(buckets.length).fill(0);
+            
+            mockData.lessons.forEach(lesson => {
+                for (let i = 0; i < buckets.length; i++) {
+                    if (lesson.duration_minutes <= buckets[i]) {
+                        bucketCounts[i]++;
+                        break;
+                    }
+                }
+            });
+            
+            const maxCount = Math.max(...bucketCounts);
+            
+            chart.innerHTML = bucketCounts.map((count, i) => {
+                const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                const label = `≤${buckets[i]}min`;
+                return `<div class="dist-bar" style="height: ${height}%" title="${label}: ${count} lessons"></div>`;
+            }).join('');
+        }
+        
+        function updateMockAnalyticsCharts() {
+            updateMockModuleDistributionChart();
+            updateMockPriorityChart();
+            updateMockEfficiencyMetrics();
+            updateMockComplexityChart();
+        }
+        
+        function updateMockModuleDistributionChart() {
+            const chart = document.getElementById('moduleDistributionChart');
+            if (!mockData?.lessons) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            // Group lessons by topic
+            const topicCounts = {};
+            mockData.lessons.forEach(lesson => {
+                topicCounts[lesson.topic] = (topicCounts[lesson.topic] || 0) + 1;
+            });
+            
+            const sortedTopics = Object.entries(topicCounts)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 8); // Top 8 topics
+            
+            const maxCount = Math.max(...sortedTopics.map(([,count]) => count));
+            
+            chart.innerHTML = sortedTopics.map(([topic, count]) => {
+                const height = (count / maxCount) * 100;
+                return `<div class="bar" style="height: ${height}%" title="${topic}: ${count} lessons"></div>`;
+            }).join('');
+        }
+        
+        function updateMockPriorityChart() {
+            const chart = document.getElementById('priorityChart');
+            if (!mockData?.lessons) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            const difficultyCounts = { beginner: 0, intermediate: 0, advanced: 0 };
+            mockData.lessons.forEach(lesson => {
+                difficultyCounts[lesson.difficulty]++;
+            });
+            
+            const maxCount = Math.max(...Object.values(difficultyCounts));
+            const difficulties = ['beginner', 'intermediate', 'advanced'];
+            
+            chart.innerHTML = difficulties.map(difficulty => {
+                const count = difficultyCounts[difficulty];
+                const height = (count / maxCount) * 100;
+                return `<div class="dist-bar" style="height: ${height}%" title="${difficulty}: ${count} lessons"></div>`;
+            }).join('');
+        }
+        
+        function updateMockEfficiencyMetrics() {
+            const container = document.getElementById('efficiencyMetrics');
+            if (!mockData?.summary) {
+                container.innerHTML = '<div style="color: #8b949e; text-align: center; padding: 20px;">No data available</div>';
+                return;
+            }
+            
+            const { summary } = mockData;
+            
+            container.innerHTML = `
+                <div class="data-item">
+                    <div class="data-label">Avg Quiz Score</div>
+                    <div class="data-value">${Math.round(summary.avg_quiz_score)}%</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Completion Rate</div>
+                    <div class="data-value">${Math.round(summary.completion_rate * 100)}%</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Total Users</div>
+                    <div class="data-value">${summary.total_users.toLocaleString()}</div>
+                </div>
+                <div class="data-item">
+                    <div class="data-label">Active Today</div>
+                    <div class="data-value">${summary.active_users_today.toLocaleString()}</div>
+                </div>
+            `;
+        }
+        
+        function updateMockComplexityChart() {
+            const chart = document.getElementById('complexityChart');
+            if (!mockData?.performance) {
+                chart.innerHTML = '<div style="color: #8b949e;">No data available</div>';
+                return;
+            }
+            
+            const performance = mockData.performance.slice(-10); // Last 10 days
+            const revenueData = performance.map(p => p.revenue);
+            
+            const maxRevenue = Math.max(...revenueData);
+            const minRevenue = Math.min(...revenueData);
+            const range = maxRevenue - minRevenue;
+            
+            chart.innerHTML = `
+                <svg width="100%" height="100%" viewBox="0 0 200 100">
+                    <polyline class="line-path" points="${revenueData.map((value, i) => {
+                        const x = (i / (revenueData.length - 1)) * 180 + 10;
+                        const y = 90 - ((value - minRevenue) / range) * 70;
+                        return `${x},${y}`;
+                    }).join(' ')}" />
+                    ${revenueData.map((value, i) => {
+                        const x = (i / (revenueData.length - 1)) * 180 + 10;
+                        const y = 90 - ((value - minRevenue) / range) * 70;
+                        return `<circle class="line-dot" cx="${x}" cy="${y}" title="Revenue: $${value.toLocaleString()}" />`;
+                    }).join('')}
+                </svg>
+            `;
+        }
+        
+        function updateMockDataTable() {
+            const container = document.getElementById('resultsTable');
+            if (!mockData?.users) {
+                container.innerHTML = '<div class="empty-state">No data available</div>';
+                return;
+            }
+            
+            const users = mockData.users.slice(0, 50); // Show first 50 users
+            
+            const table = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Subscription</th>
+                            <th>Lessons</th>
+                            <th>Quizzes</th>
+                            <th>Avg Score</th>
+                            <th>Last Active</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><code>${user.user_id}</code></td>
+                                <td>${user.name}</td>
+                                <td><span class="status-badge ${user.subscription_tier === 'enterprise' ? 'status-success' : user.subscription_tier === 'premium' ? 'status-success' : 'status-error'}">${user.subscription_tier}</span></td>
+                                <td>${user.total_lessons}</td>
+                                <td>${user.total_quizzes}</td>
+                                <td>${Math.round(user.avg_score)}%</td>
+                                <td>${new Date(user.last_active).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="btn" onclick="viewUserDetails('${user.user_id}')">👁️ View</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+        
+        function viewUserDetails(userId) {
+            if (!mockData?.users) return;
+            
+            const user = mockData.users.find(u => u.user_id === userId);
+            if (!user) return;
+            
+            const details = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;">
+                    <div style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; max-width: 600px; max-height: 80vh; overflow-y: auto; width: 100%;">
+                        <div style="padding: 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="color: #f0f6fc;">User Details: ${user.name}</h3>
+                            <button class="btn" onclick="closeDetails()">✕</button>
+                        </div>
+                        <div style="padding: 20px;">
+                            <div class="data-grid">
+                                <div class="data-item">
+                                    <div class="data-label">User ID</div>
+                                    <div class="data-value">${user.user_id}</div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="data-label">Email</div>
+                                    <div class="data-value">${user.email}</div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="data-label">Subscription</div>
+                                    <div class="data-value">${user.subscription_tier}</div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="data-label">Total Lessons</div>
+                                    <div class="data-value">${user.total_lessons}</div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="data-label">Total Quizzes</div>
+                                    <div class="data-value">${user.total_quizzes}</div>
+                                </div>
+                                <div class="data-item">
+                                    <div class="data-label">Average Score</div>
+                                    <div class="data-value">${Math.round(user.avg_score)}%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', details);
+        }
+        
+        // Detailed user functions
+        async function loadDetailedUser() {
+            const container = document.getElementById('detailedUserContent');
+            
+            try {
+                container.innerHTML = '<div class="loading">Loading detailed user profile...</div>';
+                
+                const response = await fetch('http://localhost:3001/api/detailed-user');
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                displayDetailedUser(data.data);
+                
+            } catch (error) {
+                container.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        function displayDetailedUser(user) {
+            const container = document.getElementById('detailedUserContent');
+            
+            const html = `
+                <div class="dashboard-grid">
+                    <!-- User Profile Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">👤 User Profile</div>
+                        </div>
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <div class="data-label">Name</div>
+                                <div class="data-value">${user.name}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Email</div>
+                                <div class="data-value">${user.email}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Location</div>
+                                <div class="data-value">${user.profile.location}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Occupation</div>
+                                <div class="data-value">${user.profile.occupation}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Experience</div>
+                                <div class="data-value">${user.profile.experience_level}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Subscription</div>
+                                <div class="data-value">${user.subscription_tier}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Learning Stats Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📊 Learning Statistics</div>
+                        </div>
+                        <div class="metric-grid">
+                            <div class="metric">
+                                <div class="metric-value">${user.stats.total_lessons}</div>
+                                <div class="metric-label">Lessons Completed</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${user.stats.total_quizzes}</div>
+                                <div class="metric-label">Quizzes Taken</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${user.stats.avg_score}%</div>
+                                <div class="metric-label">Average Score</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${Math.round(user.stats.total_study_time / 60)}h</div>
+                                <div class="metric-label">Study Time</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${user.stats.streak_days}</div>
+                                <div class="metric-label">Day Streak</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">${user.stats.certificates_earned}</div>
+                                <div class="metric-label">Certificates</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Lessons Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📚 Recent Lessons (Last 10)</div>
+                        </div>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${user.learning_journey.lessons_completed.slice(-10).reverse().map(lesson => `
+                                <div style="padding: 8px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <div style="font-weight: 600; color: #f0f6fc;">${lesson.title}</div>
+                                        <div style="font-size: 12px; color: #8b949e;">${lesson.topic} • ${lesson.time_spent}min</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 600; color: #58a6ff;">${lesson.score}%</div>
+                                        <div style="font-size: 12px; color: #8b949e;">${new Date(lesson.completed_at).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Achievements Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🏆 Achievements</div>
+                        </div>
+                        <div class="data-grid">
+                            ${user.learning_journey.achievements.map(achievement => `
+                                <div class="data-item">
+                                    <div class="data-label">${achievement.name}</div>
+                                    <div class="data-value">+${achievement.points} pts</div>
+                                    <div style="font-size: 11px; color: #8b949e; margin-top: 4px;">${achievement.description}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Study Sessions Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📅 Recent Study Sessions (Last 7 Days)</div>
+                        </div>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${user.learning_journey.study_sessions.slice(-7).reverse().map(session => `
+                                <div style="padding: 8px; border-bottom: 1px solid #30363d;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <div style="font-weight: 600; color: #f0f6fc;">${new Date(session.start_time).toLocaleDateString()}</div>
+                                            <div style="font-size: 12px; color: #8b949e;">
+                                                ${new Date(session.start_time).toLocaleTimeString()} - ${new Date(session.end_time).toLocaleTimeString()}
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="font-weight: 600; color: #58a6ff;">${Math.round(session.duration / 60)}h ${session.duration % 60}m</div>
+                                            <div style="font-size: 12px; color: #8b949e;">${session.lessons_studied} lessons, ${session.quizzes_taken} quizzes</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Social & Preferences Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">👥 Social & Preferences</div>
+                        </div>
+                        <div class="data-grid">
+                            <div class="data-item">
+                                <div class="data-label">Friends</div>
+                                <div class="data-value">${user.social.friends_count}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Study Groups</div>
+                                <div class="data-value">${user.social.study_groups.length}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Forum Posts</div>
+                                <div class="data-value">${user.social.forum_posts}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Helpful Votes</div>
+                                <div class="data-value">${user.social.helpful_votes_received}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Study Preference</div>
+                                <div class="data-value">${user.preferences.study_time_preference}</div>
+                            </div>
+                            <div class="data-item">
+                                <div class="data-label">Learning Style</div>
+                                <div class="data-value">${user.preferences.learning_style}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Raw Data Section -->
+                <div class="card" style="margin-top: 24px;">
+                    <div class="card-header">
+                        <div class="card-title">🔍 Complete User Data (JSON)</div>
+                    </div>
+                    <details>
+                        <summary><strong>Click to view complete user data</strong></summary>
+                        <div class="json-viewer">${JSON.stringify(user, null, 2)}</div>
+                    </details>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

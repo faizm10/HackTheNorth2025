@@ -1,17 +1,23 @@
 // src/lib/databricks.ts
 import fetch from "node-fetch";
 
-const HOST = process.env.DATABRICKS_HOST!;
-const WAREHOUSE_ID = process.env.DATABRICKS_WAREHOUSE_ID!;
-const TOKEN = process.env.DATABRICKS_TOKEN!;
+function getDatabricksConfig() {
+  const HOST = process.env.DATABRICKS_HOST;
+  const WAREHOUSE_ID = process.env.DATABRICKS_WAREHOUSE_ID;
+  const TOKEN = process.env.DATABRICKS_TOKEN;
 
-if (!HOST || !WAREHOUSE_ID || !TOKEN) {
-  throw new Error("Missing Databricks env vars");
+  if (!HOST || !WAREHOUSE_ID || !TOKEN) {
+    throw new Error("Missing Databricks env vars: DATABRICKS_HOST, DATABRICKS_WAREHOUSE_ID, DATABRICKS_TOKEN");
+  }
+
+  return { HOST, WAREHOUSE_ID, TOKEN };
 }
 
 type StatementResult = { status: { state: string }, result?: { data_array: any[]; row_count: number } };
 
 export async function runSql(sql: string) {
+  const { HOST, WAREHOUSE_ID, TOKEN } = getDatabricksConfig();
+  
   // 1) submit
   const submit = await fetch(`${HOST}/api/2.0/sql/statements`, {
     method: "POST",
