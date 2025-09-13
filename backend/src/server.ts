@@ -6,8 +6,9 @@ import { exit } from "process";
 import helloRoutes from "./api/routes/helloRoutes.js";
 import agentRoutes from "./api/routes/agentRoutes.js";
 import gradingRoutes from "./api/routes/gradingRoutes.js";
+import fileRoutes from "./api/routes/fileRoutes.js";
 import { getSupabase } from "./services/supabaseClient.js";
-import { generateMockData } from "./mockData/generator.js";
+// import { generateMockData } from "./mockData/generator.js";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/api/hello", helloRoutes);
 app.use("/api/agent", agentRoutes);
 app.use("/api/grading", gradingRoutes);
+app.use("/api/files", fileRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -170,40 +172,40 @@ app.get("/api/results/:id?", async (req, res) => {
 });
 
 // Mock data endpoint for Databricks-style analytics
-app.get('/api/mock-data', (req, res) => {
-  try {
-    const data = generateMockData();
-    res.json({
-      success: true,
-      data,
-      generated_at: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Mock data generation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate mock data',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+// app.get('/api/mock-data', (req, res) => {
+//   try {
+//     const data = generateMockData();
+//     res.json({
+//       success: true,
+//       data,
+//       generated_at: new Date().toISOString()
+//     });
+//   } catch (error) {
+//     console.error('Mock data generation error:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to generate mock data',
+//       message: error instanceof Error ? error.message : 'Unknown error'
+//     });
+//   }
+// });
 
 // Detailed user endpoint
-app.get('/api/detailed-user', (req, res) => {
-  try {
-    const data = generateMockData();
-    res.json({
-      success: true,
-      data: data.detailedUser,
-      generated_at: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Detailed user generation error:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate detailed user data',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
+// app.get('/api/detailed-user', (req, res) => {
+//   try {
+//     const data = generateMockData();
+//     res.json({
+//       success: true,
+//       data: data.detailedUser,
+//       generated_at: new Date().toISOString()
+//     });
+//   } catch (error) {
+//     console.error('Detailed user generation error:', error);
+//     res.status(500).json({ 
+//       error: 'Failed to generate detailed user data',
+//       message: error instanceof Error ? error.message : 'Unknown error'
+//     });
+//   }
+// });
 
 // Error handling middleware
 app.use(

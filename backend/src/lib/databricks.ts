@@ -30,7 +30,8 @@ export async function runSql(sql: string) {
     const text = await submit.text();
     throw new Error(`Submit failed: ${submit.status} ${text}`);
   }
-  const { statement_id } = await submit.json();
+  const submitResult = await submit.json() as { statement_id: string };
+  const { statement_id } = submitResult;
 
   // 2) poll
   let state = "PENDING";
