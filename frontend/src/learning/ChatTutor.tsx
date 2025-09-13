@@ -29,7 +29,7 @@ import { message as antdMessage } from "antd";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { getInitialAgentResponse, sendAgentResponse, gradeAnswer } from "./api";
 import type { ApiMessage } from "./api";
-import type { QuizToolData } from "./api";
+import type { QuizToolData, ShortAnswerToolData } from "./api";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -154,6 +154,10 @@ export function ChatTutor({
   const [selectedQuizOption, setSelectedQuizOption] = useState<string | null>(
     null
   );
+  const [activeShortAnswer, setActiveShortAnswer] =
+    useState<ShortAnswerToolData | null>(null);
+  const [shortAnswerInput, setShortAnswerInput] = useState("");
+  const [shortAnswerSubmitted, setShortAnswerSubmitted] = useState(false);
 
   /**
    * Response generation mode affecting the style and focus of tutor responses:
@@ -201,11 +205,13 @@ export function ChatTutor({
     return [
       {
         role: "system",
-        content: `You are a Teaching Agent. Focus on teaching the current requirement. Your goal is to Teach, then use your tools to assess the student's understanding.
-           When prompted, generate a short informative blurb teaching the given requirement. Follow this with a short digestable example.
-           If you want to create an assessment, end your response with a sentence implying the assessment.
-           For example, "Heres a quick assessment:". Do not include the assessment. An assessment will be provided. 
-          `,
+        content: `
+        You are a Teaching Agent.
+        Given a requirement, you will teach the student about the requirement.
+        What does this mean?
+        1. generate a short informative blurb on the given requirement.
+        2. follow this with a short digestable examplle.
+                `,
       },
       {
         role: "user",
@@ -245,6 +251,10 @@ export function ChatTutor({
         if (tool && tool.type === "quiz") {
           setActiveQuiz(tool.data as QuizToolData);
           setSelectedQuizOption(null);
+        } else if (tool && tool.type === "shortAnswer") {
+          setActiveShortAnswer(tool.data as ShortAnswerToolData);
+          setShortAnswerInput("");
+          setShortAnswerSubmitted(false);
         }
       } catch (e: any) {
         const msg = e?.message || "Failed to load initial lesson";
@@ -431,6 +441,9 @@ export function ChatTutor({
       if (tool && tool.type === "quiz") {
         setActiveQuiz(tool.data as QuizToolData);
         setSelectedQuizOption(null);
+      } else if (tool && tool.type === "shortAnswer") {
+        setActiveShortAnswer(tool.data as ShortAnswerToolData);
+        setShortAnswerInput("");
       }
     } catch (e: any) {
       const msg = e?.message || "Failed to get AI response";
@@ -492,6 +505,14 @@ export function ChatTutor({
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, tutorMsg]);
+      const tool = (res.message as any).tool;
+      if (tool && tool.type === "quiz") {
+        setActiveQuiz(tool.data as QuizToolData);
+        setSelectedQuizOption(null);
+      } else if (tool && tool.type === "shortAnswer") {
+        setActiveShortAnswer(tool.data as ShortAnswerToolData);
+        setShortAnswerInput("");
+      }
     } catch (e: any) {
       const msg = e?.message || "Failed to regenerate response";
       antdMessage.error(msg);
@@ -509,6 +530,9 @@ export function ChatTutor({
     setMessages([]);
     setActiveQuiz(null);
     setSelectedQuizOption(null);
+    setActiveShortAnswer(null);
+    setShortAnswerInput("");
+    setShortAnswerSubmitted(false);
     try {
       setIsLoading(true);
       const res = await getInitialAgentResponse(
@@ -534,6 +558,9 @@ export function ChatTutor({
       if (tool && tool.type === "quiz") {
         setActiveQuiz(tool.data as QuizToolData);
         setSelectedQuizOption(null);
+      } else if (tool && tool.type === "shortAnswer") {
+        setActiveShortAnswer(tool.data as ShortAnswerToolData);
+        setShortAnswerInput("");
       }
     } catch (e: any) {
       const msg = e?.message || "Failed to reset chat";
@@ -794,6 +821,11 @@ export function ChatTutor({
                       if (nextTool && nextTool.type === "quiz") {
                         setActiveQuiz(nextTool.data as QuizToolData);
                         setSelectedQuizOption(null);
+                      } else if (nextTool && nextTool.type === "shortAnswer") {
+                        setActiveShortAnswer(
+                          nextTool.data as ShortAnswerToolData
+                        );
+                        setShortAnswerInput("");
                       }
                     }
                   } catch (e: any) {
@@ -808,6 +840,130 @@ export function ChatTutor({
                 Submit Answer
               </Button>
             </Space>
+          </div>
+        )}
+        {activeShortAnswer && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 12,
+              border: "1px solid #f0f0f0",
+              borderRadius: 8,
+            }}
+          >
+            <Text strong>Short Answer Question</Text>
+            <div style={{ marginTop: 8, marginBottom: 12 }}>
+              <MarkdownRenderer content={activeShortAnswer.question} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <TextArea
+                value={shortAnswerInput}
+                onChange={(e) => setShortAnswerInput(e.target.value)}
+                placeholder="Type your answer here..."
+                rows={4}
+                disabled={shortAnswerSubmitted || isLoading}
+                style={{ fontSize: 16 }}
+              />
+            </div>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
+            >
+              <Button
+                type="primary"
+                disabled={
+                  !shortAnswerInput.trim() || shortAnswerSubmitted || isLoading
+                }
+                loading={isLoading}
+                onClick={async () => {
+                  if (
+                    !activeShortAnswer ||
+                    !shortAnswerInput.trim() ||
+                    shortAnswerSubmitted
+                  )
+                    return;
+
+                  // Add user's answer to chat
+                  const answerMsg: ChatMessage = {
+                    id: String(Date.now()),
+                    type: "user",
+                    content: `My answer: ${shortAnswerInput.trim()}`,
+                    timestamp: new Date(),
+                  };
+                  const combined = [...messages, answerMsg];
+                  setMessages(combined);
+                  setIsLoading(true);
+                  setShortAnswerSubmitted(true);
+
+                  try {
+                    const res = await gradeAnswer({
+                      question: activeShortAnswer.question,
+                      answer: shortAnswerInput.trim(),
+                      messages: toApiMessages(combined),
+                    });
+                    const tutorMsg: ChatMessage = {
+                      id: String(Date.now() + 1),
+                      type: "tutor",
+                      content: res.response.content,
+                      timestamp: new Date(),
+                    };
+                    setMessages((prev) => [...prev, tutorMsg]);
+                    setActiveShortAnswer(null);
+                    setShortAnswerInput("");
+                    setShortAnswerSubmitted(false);
+
+                    // If grading passed, advance to next requirement and fetch new lesson
+                    if (
+                      res.grading?.passed &&
+                      currentRequirementIndex < derivedRequirements.length - 1
+                    ) {
+                      const nextIndex = currentRequirementIndex + 1;
+                      setCurrentRequirementIndex(nextIndex);
+                      const next = await getInitialAgentResponse(
+                        buildInitialMessages(
+                          derivedRequirements[nextIndex] || currentTopic
+                        ),
+                        {
+                          requirements: derivedRequirements,
+                          currentRequirementIndex: nextIndex,
+                          currentModule: moduleName || currentTopic,
+                        }
+                      );
+                      const nextMsg: ChatMessage = {
+                        id: String(Date.now() + 2),
+                        type: "tutor",
+                        content:
+                          (next.message as any).choices?.[0]?.message
+                            ?.content ||
+                          next.message.content ||
+                          "No response received",
+                        timestamp: new Date(),
+                      };
+                      setMessages((prev) => [...prev, nextMsg]);
+                      const nextTool = (next.message as any).tool;
+                      if (nextTool && nextTool.type === "quiz") {
+                        setActiveQuiz(nextTool.data as QuizToolData);
+                        setSelectedQuizOption(null);
+                      } else if (nextTool && nextTool.type === "shortAnswer") {
+                        setActiveShortAnswer(
+                          nextTool.data as ShortAnswerToolData
+                        );
+                        setShortAnswerInput("");
+                        setShortAnswerSubmitted(false);
+                      }
+                    }
+                  } catch (e: any) {
+                    const msg = e?.message || "Failed to grade answer";
+                    antdMessage.error(msg);
+                    appendTutorError(msg);
+                    setShortAnswerSubmitted(false); // Allow retry on error
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              >
+                {shortAnswerSubmitted ? "Submitted" : "Submit Answer"}
+              </Button>
+            </div>
           </div>
         )}
         {isLoading && (

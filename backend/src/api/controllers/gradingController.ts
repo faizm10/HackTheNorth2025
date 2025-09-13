@@ -152,7 +152,11 @@ Be thorough but fair in your assessment.`,
       role: "user",
       content: `Please evaluate the user's understanding based on this conversation history:
 
-${JSON.stringify(messageHistory, null, 2)}`,
+${JSON.stringify(
+  messageHistory.filter((msg) => msg.role !== "system"),
+  null,
+  2
+)}`,
     },
   ];
 

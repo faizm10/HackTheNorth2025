@@ -82,8 +82,7 @@ const TOOLS: any[] = [
     type: "function",
     function: {
       name: "generateShortAnswer",
-      description:
-        "Best used when a written answer best evaulates the user's understanding",
+      description: "Best used when generating a short answer assessment",
       parameters: {
         type: "object",
         properties: {},
@@ -96,7 +95,7 @@ const TOOLS: any[] = [
     function: {
       name: "gradeRequirementUnderstanding",
       description:
-        "Evaluate the users understanding, and find if you can move to the next requirement",
+        "Evaluate the users understanding of the current Requirement. EXPENSIVE. only use if you are sure that it is time to evaluate.",
       parameters: {
         type: "object",
         properties: {},
@@ -394,10 +393,11 @@ export const getLLMResponse = async (
     const completionWithTools: any = await chatCompletionsCreate({
       model: "command-a-reasoning-08-2025",
       messages: [
+        ...messages,
         {
-          role: "system",
+          role: "assistant",
           content:
-            "you are a tool selector agent. determine which tool to use based on the context of this message",
+            "thought: I should use a tool to help assess the user, if the time is right",
         },
         completion.choices?.[0]?.message,
       ],
@@ -410,7 +410,7 @@ export const getLLMResponse = async (
       throw new Error("Failed to generate response from Cohere");
     }
 
-    console.log("tool choice response", responseMessage);
+    console.log("LLM response with tools", responseMessage);
 
     let toolResponse: any;
 
@@ -459,15 +459,20 @@ export const getLLMResponse = async (
  */
 export const generateQuiz = async (messages: ChatCompletionMessageParam[]) => {
   const promptMessages = [
-    ...messages,
     {
       role: "system",
       content:
         'Given the conversation so far, generate a quiz question with multiple choice options. Respond ONLY in the following JSON format: { "options": [ { "label": "A", "content": "Option 1" }, { "label": "B", "content": "Option 2" }, ... ], "answer": "string", "question": "string" }. Do not include any explanation or extra text.',
     } as ChatCompletionMessageParam,
+    ...messages.filter((msg) => msg.role !== "system"),
   ];
 
-  const completion: any = await getLLMCompletion(promptMessages);
+  const completion: any = await getLLMCompletion(
+    promptMessages,
+    "command-a-03-2025"
+  );
+
+  console.log("quiz completion", completion);
   const generatedMessage = completion.choices?.[0]?.message?.content;
   if (!generatedMessage) {
     throw new Error("Failed to generate quiz from Cohere");
@@ -505,12 +510,12 @@ export const generateShortAnswer = async (
   messages: ChatCompletionMessageParam[]
 ) => {
   const promptMessages: ChatCompletionMessageParam[] = [
-    ...messages,
     {
       role: "system",
       content:
         'Generate a short answer question based on the conversation and the current requirement. Respond ONLY in the following JSON format: { "question": "string", "idealAnswer": "string" }. Do not include any explanation or extra text.',
     } as ChatCompletionMessageParam,
+    ...messages.filter((msg) => msg.role !== "system"),
   ];
 
   const completion: any = await getLLMCompletion(promptMessages);

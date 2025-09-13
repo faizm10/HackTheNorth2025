@@ -18,9 +18,14 @@ export interface QuizToolData {
   answer?: string;
 }
 
+export interface ShortAnswerToolData {
+  question: string;
+  idealAnswer: string;
+}
+
 export type ToolPayload =
   | { type: "quiz"; data: QuizToolData }
-  | { type: "shortAnswer"; data: any }
+  | { type: "shortAnswer"; data: ShortAnswerToolData }
   | { type: "grading"; data: { passed: boolean; feedback: string } };
 
 export interface AssistantMessage {
