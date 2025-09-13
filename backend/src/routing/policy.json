@@ -1,0 +1,15 @@
+{
+  "defaults": { "mode": "balanced", "max_latency_ms": 4500 },
+  "modes": {
+    "quality":  { "primary": "llama-3.3-70b-versatile", "fallback": "openai/gpt-oss-120b" },
+    "balanced": { "primary": "google/gemini-2.5-flash", "fallback": "llama-3.1-8b-instant" },
+    "cheap":    { "primary": "google/gemini-2.5-flash-lite", "fallback": "llama-3.1-8b-instant" }
+  },
+  "tasks": {
+    "topic_map":          { "mode": "quality"  },
+    "chunk_classify":     { "mode": "balanced" },
+    "quiz_generate":      { "mode": "quality"  },
+    "overview_summarize": { "mode": "cheap"    },
+    "diagram_mermaid":    { "mode": "balanced" }
+  }
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Processing API Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .module, .requirement, .chunk {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .module-title, .requirement-desc {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .module-summary, .requirement-details {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .priority {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .priority-high {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .priority-medium {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .priority-low {
+            background: #28a745;
+            color: white;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Text Processing API Tester</h1>
+        
+        <div class="form-group">
+            <label for="apiUrl">API Endpoint:</label>
+            <input type="text" id="apiUrl" value="http://localhost:3001/api/process" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        
+        <div class="form-group">
+            <label for="textInput">Enter your text content:</label>
+            <textarea id="textInput" placeholder="Paste your text here to process it into learning modules, chunks, assignments, and requirements...">Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed. The field has revolutionized numerous industries and continues to evolve rapidly.
+
+There are three main types of machine learning: supervised learning, unsupervised learning, and reinforcement learning. Supervised learning uses labeled training data to learn a mapping between inputs and outputs. Common algorithms include linear regression, decision trees, and neural networks.
+
+Unsupervised learning finds hidden patterns in data without labeled examples, using techniques like clustering and dimensionality reduction. Reinforcement learning involves an agent learning through interaction with an environment, receiving rewards or penalties for its actions.
+
+Before applying machine learning algorithms, data must be preprocessed. This includes handling missing values, encoding categorical variables, scaling numerical features, and splitting data into training and testing sets. Feature engineering is also crucial, involving the creation of new features that may improve model performance.</textarea>
+        </div>
+        
+        <button onclick="processText()" id="processBtn">🔧 Process Text</button>
+        
+        <div id="loading" class="loading" style="display: none;">
+            <p>⏳ Processing your text with AI... This may take a few seconds.</p>
+        </div>
+        
+        <div id="results" class="results" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function processText() {
+            const textInput = document.getElementById('textInput');
+            const apiUrl = document.getElementById('apiUrl');
+            const processBtn = document.getElementById('processBtn');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            const text = textInput.value.trim();
+            
+            if (!text) {
+                alert('Please enter some text to process.');
+                return;
+            }
+            
+            if (text.length < 100) {
+                alert('Text must be at least 100 characters long.');
+                return;
+            }
+            
+            // Show loading state
+            processBtn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            
+            try {
+                const response = await fetch(apiUrl.value, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+                
+                displayResults(data);
+                
+            } catch (error) {
+                results.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Error Processing Text</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Make sure the backend server is running on port 3001.</p>
+                    </div>
+                `;
+                results.style.display = 'block';
+            } finally {
+                processBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+        
+        function displayResults(data) {
+            const { data: result, metadata } = data;
+            
+            let html = `
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${metadata.textLength}</div>
+                        <div class="stat-label">Characters</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${metadata.chunkCount}</div>
+                        <div class="stat-label">Chunks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${metadata.moduleCount}</div>
+                        <div class="stat-label">Modules</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${metadata.assignmentCount}</div>
+                        <div class="stat-label">Assignments</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${metadata.requirementCount}</div>
+                        <div class="stat-label">Requirements</div>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h3>📚 Learning Modules</h3>
+                    ${result.modules.modules.map(module => `
+                        <div class="module">
+                            <div class="module-title">${module.title}</div>
+                            <div class="module-summary">${module.summary}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section">
+                    <h3>📋 Learning Requirements</h3>
+                    ${result.requirements.requirements.map(req => `
+                        <div class="requirement">
+                            <div class="requirement-desc">${req.description}</div>
+                            <div class="requirement-details">
+                                <span class="priority priority-${req.priority}">${req.priority}</span>
+                                <span style="margin-left: 10px; color: #666;">${req.category}</span>
+                                <span style="margin-left: 16px; color: #333;">Module: <strong>${req.module_id}</strong></span>
+                                <span style="margin-left: 12px; color: #333;">Chunk: <strong>${req.chunk_id}</strong></span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section">
+                    <h3>📄 Text Chunks</h3>
+                    ${result.chunks.map(chunk => `
+                        <div class="chunk">
+                            <strong>${chunk.id}:</strong> ${chunk.text.substring(0, 200)}${chunk.text.length > 200 ? '...' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section">
+                    <h3>🔗 Chunk Assignments</h3>
+                    ${result.assignments.assignments.map(assignment => `
+                        <div class="chunk">
+                            <strong>${assignment.chunk_id}</strong> → Module ${assignment.module_id} 
+                            <span style="color: #666;">(Confidence: ${(assignment.confidence * 100).toFixed(1)}%)</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="section">
+                    <h3>🔍 Raw API Response</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+            
+            document.getElementById('results').innerHTML = html;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
