@@ -17,17 +17,30 @@ export interface ChatMessage {
 interface ChatTutorProps {
   currentTopic: string
   lessonContent: string
+  initialLessonText?: string
 }
 
-export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      type: 'tutor',
-      content: `Hello! I'm your AI tutor for "${currentTopic}". Ask me anything about this lesson.`,
-      timestamp: new Date(),
-    },
-  ])
+export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: ChatTutorProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const arr: ChatMessage[] = [
+      {
+        id: 'welcome',
+        type: 'tutor',
+        content: `Hello! I'm your AI tutor for "${currentTopic}". Ask me anything about this lesson.`,
+        timestamp: new Date(),
+      },
+    ]
+    const init = (initialLessonText || lessonContent || '').trim()
+    if (init) {
+      arr.push({
+        id: 'lesson-intro',
+        type: 'tutor',
+        content: `Here is the lesson content to get you started:\n\n${init}`,
+        timestamp: new Date(),
+      })
+    }
+    return arr
+  })
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [mode, setMode] = useState<'explain' | 'examples' | 'steps' | 'quiz'>('explain')

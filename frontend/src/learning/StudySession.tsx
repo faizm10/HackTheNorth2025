@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Layout, Card, Typography, Progress, Button, Tag, Divider, Alert } from 'antd'
+import { Layout, Card, Typography, Progress, Button, Tag, Divider } from 'antd'
 import {
   LeftOutlined,
   RightOutlined,
@@ -7,13 +7,13 @@ import {
   AimOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
-  InfoCircleOutlined,
 } from '@ant-design/icons'
 import { ChatTutor } from './ChatTutor'
 import type { CourseUnit } from './types'
+import { QuizPanel } from './QuizPanel'
 
 const { Sider, Content } = Layout
-const { Title, Text, Paragraph } = Typography
+const { Title, Text } = Typography
 
 export function StudySession({
   guide,
@@ -224,7 +224,8 @@ export function StudySession({
       </Sider>
 
       <Content style={{ padding: 24, display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto 1fr', gap: 16 }}>
+          {/* Header Card */}
           <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -238,28 +239,7 @@ export function StudySession({
             </div>
             <Title level={3} style={{ marginTop: 8 }}>{currentLessonData.title}</Title>
 
-            <Paragraph style={{ fontSize: 16 }}>{currentLessonData.content}</Paragraph>
-
-            {/* Key Learning Points hidden per request */}
-
-            {/* Examples & Applications hidden per request */}
-
-            <Alert
-              showIcon
-              type="success"
-              message="Study Tip"
-              icon={<InfoCircleOutlined />}
-              description={
-                <Text>
-                  {currentLessonData.type === 'Assessment'
-                    ? 'Take your time with this assessment. Review the key concepts before proceeding.'
-                    : 'Practice the examples and visualize the geometric interpretations when possible.'}
-                </Text>
-              }
-              style={{ marginTop: 16 }}
-            />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
               <Button onClick={prevLesson} disabled={currentUnit === 0 && currentLesson === 0} icon={<LeftOutlined />}>Previous</Button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#999' }}>
                 <ClockCircleOutlined /> <Text type="secondary">Estimated time: 15-20 minutes</Text>
@@ -269,14 +249,25 @@ export function StudySession({
               </Button>
             </div>
           </Card>
-        </div>
 
-        <div style={{ marginTop: 16 }}>
-          <ChatTutor
-            key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
-            currentTopic={`${guide.title} - ${currentUnitData.unitName}: ${currentLessonData.title}`}
-            lessonContent={currentLessonData.content}
-          />
+          {/* Two-column main area: left chat, right quiz */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'stretch', minHeight: 0 }}>
+            <div style={{ minHeight: 0 }}>
+              <ChatTutor
+                key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
+                currentTopic={`${guide.title} - ${currentUnitData.unitName}: ${currentLessonData.title}`}
+                lessonContent={currentLessonData.content}
+                initialLessonText={currentLessonData.content}
+              />
+            </div>
+            <div style={{ minHeight: 0 }}>
+              <QuizPanel
+                topic={guide.title}
+                lessonTitle={currentLessonData.title}
+                content={currentLessonData.content}
+              />
+            </div>
+          </div>
         </div>
       </Content>
     </Layout>
