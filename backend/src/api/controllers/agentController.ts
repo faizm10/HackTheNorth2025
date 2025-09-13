@@ -1,17 +1,15 @@
-import OpenAI from "openai";
+import {
+  getLLMCompletion,
+  chatCompletionsCreate,
+  DEFAULT_MODEL,
+} from "./llmAPI.js";
 import { Request, Response } from "express";
 import { ChatCompletionMessageParam } from "openai/resources";
 
 type ChatRole = "system" | "user" | "assistant";
 type ChatMessage = { role: ChatRole; content: string };
 
-const openai = new OpenAI({
-  apiKey:
-    process.env.COHERE_API_KEY || "pJZf7BpJDXl16cgo4iI2adeSJp0B7kzxLHba6m7B",
-  baseURL: "https://api.cohere.ai/compatibility/v1",
-});
-
-const MODEL = "command-a-03-2025";
+const MODEL = DEFAULT_MODEL;
 
 const context = {
   currentRequirement: "The user must understand the concept of addition",
@@ -180,12 +178,12 @@ export const getLLMResponse = async (
   const model = (extraContext?.model as string) || MODEL;
 
   try {
-    const completion: any = await openai.chat.completions.create({
+    const completion: any = await chatCompletionsCreate({
       model,
       messages: [
         ...messages,
         { role: "system", content: JSON.stringify(extraContext) },
-      ],
+      ] as any,
       tools: TOOLS as any,
       tool_choice: "auto",
     });
@@ -209,16 +207,6 @@ export const getLLMResponse = async (
   } catch (error) {
     throw error;
   }
-};
-
-export const getLLMCompletion = async (
-  messages: ChatCompletionMessageParam[]
-) => {
-  const completion = await openai.chat.completions.create({
-    model: MODEL,
-    messages,
-  });
-  return completion;
 };
 
 export const generateQuiz = async (messages: ChatCompletionMessageParam[]) => {
