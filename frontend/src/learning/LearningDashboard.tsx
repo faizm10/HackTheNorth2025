@@ -71,19 +71,15 @@ export function LearningDashboard() {
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
-      <Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+      <Header style={{ background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1200, margin: '0 auto', padding: '12px 16px' }}>
           <Space>
-            <div style={{ padding: 8, background: '#1677ff', borderRadius: 8 }}>
-              <RocketOutlined style={{ color: '#fff', fontSize: 18 }} />
+            <div style={{ width: 28, height: 28, background: '#1677ff', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <RocketOutlined style={{ color: '#fff', fontSize: 16 }} />
             </div>
             <div>
               <Title level={3} style={{ margin: 0 }}>LearnAI Academy</Title>
-              <Text type="secondary">Personalized learning with AI-powered study guides</Text>
             </div>
-          </Space>
-          <Space>
-            <div style={{ width: 32, height: 32, background: '#1677ff', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>JD</div>
           </Space>
         </div>
       </Header>
