@@ -214,13 +214,13 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
       bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', height: '70vh' }}
     >
       {/* Quick actions */}
-      <Space wrap style={{ marginBottom: 8 }}>
+      {/* <Space wrap style={{ marginBottom: 8 }}>
         {suggestions.map((q) => (
           <Button key={q} size="small" onClick={() => setInputValue(q)}>
             {q}
           </Button>
         ))}
-      </Space>
+      </Space> */}
 
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
         <List

@@ -262,16 +262,16 @@ export function StudySession({
           </Card>
 
           {/* Two-column main area: left chat, right quiz */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16, alignItems: 'stretch', minHeight: 0 }}>
-            <div style={{ minHeight: 0 }}>
+          <div >
+            {/* <div style={{ minHeight: 0 }}> */}
               <ChatTutor
                 key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
                 currentTopic={`${guide.title} - ${currentUnitData.unitName}: ${currentLessonData.title}`}
                 lessonContent={currentLessonData.content}
                 initialLessonText={currentLessonData.content}
               />
-            </div>
-            <div style={{ minHeight: 0 }}>
+            {/* </div> */}
+            {/* <div style={{ minHeight: 0 }}>
               <QuizPanel
                 key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
                 topic={guide.title}
@@ -287,7 +287,7 @@ export function StudySession({
                   }
                 }}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </Content>
