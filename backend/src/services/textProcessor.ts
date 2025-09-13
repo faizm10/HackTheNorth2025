@@ -1,8 +1,8 @@
 import { chunkText } from '../pipeline/chunk.js';
 import { runModules } from '../pipeline/modules.js';
 import { runAssignments } from '../pipeline/assign.js';
-import { extractRequirements } from '../pipeline/requirements.js';
-import { Chunk, ModulesResult, AssignmentsResult, RequirementsResult } from '../types.js';
+import { extractChunkRequirements } from '../pipeline/requirements.js';
+import { Chunk, ModulesResult, AssignmentsResult, RequirementsResult, Requirement } from '../types.js';
 
 export interface ProcessingResult {
   chunks: Chunk[];
@@ -34,9 +34,19 @@ export async function processText(text: string): Promise<ProcessingResult> {
   const assignments = await runAssignments(chunks, modules);
   console.log(`   Completed ${assignments.length} assignments`);
   
-  // 4. Extract requirements
+  // 4. Extract requirements per chunk/module assignment
   console.log('📋 Extracting requirements...');
-  const requirements = await extractRequirements(text);
+  const requirementsList: Requirement[] = [];
+  for (const a of assignments) {
+    if (!a.module_id || a.module_id === 'none') continue;
+    const chunk = chunks.find(c => c.id === a.chunk_id);
+    if (!chunk) continue;
+    const module = modules.modules.find(m => m.id === a.module_id);
+    const moduleTitle = module ? module.title : 'Unassigned';
+    const reqs = await extractChunkRequirements(a.chunk_id, chunk.text, a.module_id, moduleTitle);
+    requirementsList.push(...reqs);
+  }
+  const requirements: RequirementsResult = { requirements: requirementsList };
   console.log(`   Extracted ${requirements.requirements.length} requirements`);
   
   const result: ProcessingResult = {

@@ -41,3 +41,22 @@ Instructions:
 Return only valid JSON with this exact structure:
 {"module_id": "m1", "confidence": 0.85}`;
 }
+
+export function chunkRequirementsPrompt(chunk: string, moduleTitle: string): string {
+  return `From the following passage, extract 2-5 concrete learning requirements/prerequisites a learner must fulfill to master the module "${moduleTitle}".
+
+Passage:
+${chunk}
+
+Return ONLY valid JSON with this exact structure (no markdown, no extra text):
+{
+  "requirements": [
+    {"description": "Specific, measurable learning requirement", "priority": "high", "category": "Knowledge Area"}
+  ]
+}
+
+Guidelines:
+- Requirements should be actionable, measurable, and aligned with the module topic
+- Use priority: high (foundational), medium (important), low (advanced)
+- Use category labels like: Foundation, Application, Practice, Analysis, Communication`;
+}

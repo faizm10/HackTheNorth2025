@@ -28,6 +28,8 @@ export interface Requirement {
   description: string;
   priority: 'high' | 'medium' | 'low';
   category: string;
+  module_id: string; // related module id (or 'none')
+  chunk_id: string;  // related chunk id
 }
 
 export interface RequirementsResult {

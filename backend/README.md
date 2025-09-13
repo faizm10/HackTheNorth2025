@@ -9,6 +9,7 @@ A TypeScript API that processes text content using Google's Gemini AI to generat
 - **Module Generation**: Uses Gemini AI to create high-level learning modules
 - **Smart Assignment**: Assigns text chunks to relevant modules with confidence scores
 - **Learning Requirements**: Extracts actionable prerequisites and learning objectives
+  - Each requirement now references the related `module_id` and `chunk_id`
 - **RESTful API**: Clean Express.js API ready for frontend integration
 
 ## Quick Start
@@ -98,13 +99,17 @@ Content-Type: application/json
           "id": "r1",
           "description": "Understand core concepts and terminology",
           "priority": "high",
-          "category": "Foundation"
+          "category": "Foundation",
+          "module_id": "m1",
+          "chunk_id": "c-001"
         },
         {
           "id": "r2", 
           "description": "Practice with real examples",
           "priority": "medium",
-          "category": "Application"
+          "category": "Application",
+          "module_id": "m2",
+          "chunk_id": "c-002"
         }
       ]
     }
