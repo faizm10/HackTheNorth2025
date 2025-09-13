@@ -28,6 +28,9 @@ body {
   display: block;
   min-width: 0;
   min-height: 100vh;
+  color: #141414; /* darker text */
+  font-size: 16px; /* larger base font */
+  line-height: 1.65; /* more comfortable reading */
 }
 
 h1 {

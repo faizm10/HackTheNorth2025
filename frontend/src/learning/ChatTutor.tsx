@@ -3,6 +3,7 @@ import type { KeyboardEventHandler } from 'react'
 import { Card, Input, Button, List, Avatar, Typography, Space, Tag, Select, Switch, Tooltip } from 'antd'
 import { SendOutlined, RobotOutlined, UserOutlined, CopyOutlined, ReloadOutlined, DeleteOutlined, ReadOutlined, BulbOutlined, QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons'
 import { message as antdMessage } from 'antd'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
 const { TextArea } = Input
 const { Text } = Typography
@@ -260,7 +261,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
                   />
                 }
                 title={<Text strong style={{ fontSize: 12 }}>{m.type === 'user' ? 'You' : 'AI Tutor'}</Text>}
-                description={<div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>}
+                description={<MarkdownRenderer content={m.content} fontSize={17} />}
               />
             </List.Item>
           )}
@@ -284,6 +285,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={onKeyDown}
+          style={{ fontSize: 16 }}
         />
         <Button icon={<ReloadOutlined />} onClick={regenerateLast} disabled={isLoading || messages.filter(m => m.type==='user').length===0}>
           Regenerate
