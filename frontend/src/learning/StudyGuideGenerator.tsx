@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { Card, Typography, Button, Tag, Progress, List, Space, Alert, Spin } from 'antd'
-import { BulbOutlined, CheckCircleOutlined, ClockCircleOutlined, InteractionOutlined, BookOutlined, AimOutlined, StarOutlined, LoadingOutlined } from '@ant-design/icons'
+import { useEffect, useState } from 'react'
+import { Card, Typography, Button, Tag, Progress, List, Space, Alert } from 'antd'
+import { CheckCircleOutlined, ClockCircleOutlined, InteractionOutlined, BookOutlined, AimOutlined, StarOutlined } from '@ant-design/icons'
 import { ApiClient, type ProcessedResult } from '../lib/api'
 
 const { Title, Text } = Typography
@@ -21,31 +21,42 @@ export function StudyGuideGenerator({
   files,
   textContent,
   onStudyGuideGenerated,
+  autoStartKey,
+  onGeneratingChange,
 }: {
   topic: string
   difficulty: string
   files: File[]
   textContent: string
   onStudyGuideGenerated?: (topic: string, sections: StudyGuideSection[]) => void
+  autoStartKey?: number
+  onGeneratingChange?: (loading: boolean) => void
 }) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [studyGuide, setStudyGuide] = useState<StudyGuideSection[] | null>(null)
-  const [extractionStatus, setExtractionStatus] = useState<string>("")
   const [error, setError] = useState<string | null>(null)
-  const [isCompleted, setIsCompleted] = useState(false)
+
+  // Allow parent to trigger generation (upper button)
+  useEffect(() => {
+    if (autoStartKey === undefined) return
+    if (studyGuide) return
+    if (isGenerating) return
+    // Kick off generation
+    void generate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartKey])
 
   const generate = async () => {
     setIsGenerating(true)
+    if (onGeneratingChange) onGeneratingChange(true)
     setError(null)
-    setExtractionStatus("")
-    setIsCompleted(false)
+    // status banners removed; keep UI clean during generation
 
     try {
       let finalText = textContent
 
       // If we have files but no text content, extract text from files first
       if (files.length > 0 && (!textContent || textContent.length < 100)) {
-        setExtractionStatus("Extracting text from uploaded files...")
         
         const extractionResult = await ApiClient.uploadAndProcess(files)
 
@@ -54,13 +65,10 @@ export function StudyGuideGenerator({
         }
 
         if (extractionResult.data) {
-          setExtractionStatus("Text extraction completed! Processing with AI...")
           // Use the processed result directly
           const processedData = extractionResult.data.processedResult
           const studyGuideSections = convertToStudyGuideSections(processedData, topic)
           setStudyGuide(studyGuideSections)
-          setExtractionStatus("Study guide generation completed!")
-          setIsCompleted(true)
           // Notify parent component about the generated study guide
           if (onStudyGuideGenerated) {
             onStudyGuideGenerated(topic, studyGuideSections)
@@ -72,7 +80,6 @@ export function StudyGuideGenerator({
 
       // If we have text content, process it directly
       if (finalText && finalText.length > 100) {
-        setExtractionStatus("Processing text with AI...")
         
         const processResult = await ApiClient.processText(finalText)
 
@@ -81,11 +88,8 @@ export function StudyGuideGenerator({
         }
 
         if (processResult.data) {
-          setExtractionStatus("AI processing completed! Generating study guide...")
           const studyGuideSections = convertToStudyGuideSections(processResult.data, topic)
           setStudyGuide(studyGuideSections)
-          setExtractionStatus("Study guide generation completed!")
-          setIsCompleted(true)
           // Notify parent component about the generated study guide
           if (onStudyGuideGenerated) {
             onStudyGuideGenerated(topic, studyGuideSections)
@@ -105,6 +109,7 @@ export function StudyGuideGenerator({
       setError(error instanceof Error ? error.message : 'Failed to generate study guide')
     } finally {
       setIsGenerating(false)
+      if (onGeneratingChange) onGeneratingChange(false)
     }
   }
 
@@ -147,84 +152,33 @@ export function StudyGuideGenerator({
     setStudyGuide(studyGuide.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s)))
   }
 
-  const difficultyColor = (diff: string) => {
-    if (diff === 'beginner') return 'green'
-    if (diff === 'intermediate') return 'orange'
-    if (diff === 'advanced') return 'red'
-    return 'default'
-  }
+  // Difficulty tags hidden per design; color mapping removed
 
   const completed = studyGuide?.filter((s) => s.completed).length || 0
   const total = studyGuide?.length || 0
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
 
   if (!studyGuide) {
+    // Hide generating/spinner UI entirely; only show errors if they occur
+    if (!error) return null
     return (
       <Card>
-        <Title level={4} style={{ marginBottom: 12 }}>
-          <BulbOutlined /> AI Study Guide Generator
-        </Title>
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <div style={{ marginBottom: 8 }}>
-            <Text type="secondary">Ready to generate a personalized study guide for:</Text>
-          </div>
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>{topic || 'Your uploaded content'}</div>
-          <Space>
-            <Tag>{difficulty} level</Tag>
-            <Tag>{files.length} files uploaded</Tag>
-          </Space>
-          {/* Status Messages */}
-          {extractionStatus && (
-            <Alert
-              message={extractionStatus}
-              type="info"
-              showIcon
-              style={{ marginTop: 16 }}
-              icon={<LoadingOutlined />}
-            />
-          )}
-          
-          {error && (
-            <Alert
-              message="Error"
-              description={error}
-              type="error"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          )}
-          
-          {isCompleted && (
-            <Alert
-              message="Study guide generation completed successfully!"
-              type="success"
-              showIcon
-              style={{ marginTop: 16 }}
-            />
-          )}
-          
-          <div style={{ marginTop: 16 }}>
-            <Button type="primary" size="large" loading={isGenerating} onClick={generate} icon={<BulbOutlined />}>
-              {isGenerating ? 'Generating Study Guide...' : 'Generate Study Guide'}
-            </Button>
-          </div>
+          <Alert
+            message="Error"
+            description={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: 12 }}
+          />
         </div>
       </Card>
     )
   }
 
   return (
-    <div style={{ display: 'grid', gap: 16 }}>
-      {/* Completion Status */}
-      {isCompleted && (
-        <Alert
-          message="Study Guide Generated Successfully!"
-          description={`Your personalized study guide for ${topic} has been created using AI analysis of your uploaded content.`}
-          type="success"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
+    <div style={{ display: 'grid', gap: 16 }} data-difficulty={difficulty}>
+      {/* Success banner moved to parent layout; no in-component success banner */}
       
       <Card>
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -253,7 +207,6 @@ export function StudyGuideGenerator({
                   <div style={{ flex: 1 }}>
                     <Space>
                       <Text type="secondary">Section {index + 1}</Text>
-                      <Tag color={difficultyColor(section.difficulty)}>{section.difficulty}</Tag>
                     </Space>
                     <div style={{ fontWeight: 600, fontSize: 16, marginTop: 4 }}>{section.title}</div>
                     <Text type="secondary">{section.content}</Text>
@@ -280,7 +233,7 @@ export function StudyGuideGenerator({
                       disabled={!canStart}
                       icon={section.completed ? <CheckCircleOutlined /> : <ClockCircleOutlined />}
                     >
-                      {section.completed ? 'Complete' : `${section.estimatedTime} min`}
+                      {section.completed ? 'Complete' : 'Mark Complete'}
                     </Button>
                   </div>
                 </div>

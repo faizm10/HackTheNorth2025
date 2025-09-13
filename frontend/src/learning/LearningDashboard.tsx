@@ -18,6 +18,9 @@ export function LearningDashboard() {
   const [extractedText, setExtractedText] = useState<string>("")
   const [studyContent, setStudyContent] = useState<{ text: string; topic: string; difficulty: string } | null>(null)
   const [activeStudySession, setActiveStudySession] = useState<StudyGuide | null>(null)
+  const [generatorStartKey, setGeneratorStartKey] = useState<number>(0)
+  const [generationSuccess, setGenerationSuccess] = useState<boolean>(false)
+  const [generationLoading, setGenerationLoading] = useState<boolean>(false)
   const [activeStudyGuides, setActiveStudyGuides] = useState<StudyGuide[]>([
     {
       id: 1,
@@ -50,6 +53,7 @@ export function LearningDashboard() {
 
   const handleTextExtracted = (combinedText: string) => {
     setExtractedText(combinedText)
+    setGenerationLoading(false)
     // Auto-generate study content from extracted text
     if (combinedText.length > 100) {
       setStudyContent({
@@ -62,6 +66,8 @@ export function LearningDashboard() {
 
   const handleTextChange = (text: string, topic: string, difficulty: string) => {
     setStudyContent({ text, topic, difficulty })
+    setGenerationSuccess(false)
+    setGeneratorStartKey(Date.now())
   }
 
   const handleStudyGuideGenerated = (topic: string, sections: any[]) => {
@@ -79,6 +85,7 @@ export function LearningDashboard() {
 
     // Replace the first study guide with the new one
     setActiveStudyGuides(prev => [newStudyGuide, ...prev.slice(1)])
+    setGenerationSuccess(true)
   }
 
   const todaysLessons = [
@@ -235,7 +242,8 @@ export function LearningDashboard() {
                         <FileUpload 
                           onFilesChange={handleFilesChange} 
                           onTextExtracted={handleTextExtracted}
-                          autoExtract={false}
+                          autoExtract={true}
+                          generationSuccess={generationSuccess}
                         />
                       </Space>
                     </Card>
@@ -250,25 +258,14 @@ export function LearningDashboard() {
                             <Text type="secondary">Tell us what to study</Text>
                           </div>
                         </Space>
-                        <TextInputArea onTextChange={handleTextChange} />
+                        <TextInputArea onTextChange={handleTextChange} generationLoading={generationLoading} />
                       </Space>
                     </Card>
                   </Col>
                 </Row>
 
-                {uploadedFiles.length > 0 && extractedText.length < 100 && !studyContent && (
-                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
-                    <Card style={{ borderColor: '#1890ff', backgroundColor: '#f6ffed' }}>
-                      <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                        <div style={{ color: '#1890ff', fontWeight: 600, marginBottom: 8 }}>
-                          Files uploaded successfully! 
-                        </div>
-                        <div style={{ color: '#1890ff', fontSize: 14 }}>
-                          Click the green "Extract Text" button above to extract text from your files, then you can generate a study guide.
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
+                {false && (
+                  <div />
                 )}
 
                 {(studyContent || (uploadedFiles.length > 0 && extractedText.length > 100)) && (
@@ -279,6 +276,8 @@ export function LearningDashboard() {
                       files={uploadedFiles}
                       textContent={studyContent?.text || extractedText}
                       onStudyGuideGenerated={handleStudyGuideGenerated}
+                      autoStartKey={generatorStartKey}
+                      onGeneratingChange={setGenerationLoading}
                     />
                   </div>
                 )}

@@ -5,7 +5,7 @@ import { BookOutlined, AimOutlined, BulbOutlined } from '@ant-design/icons'
 const { TextArea } = Input
 const { Title, Text } = Typography
 
-export function TextInputArea({ onTextChange }: { onTextChange: (text: string, topic: string, difficulty: string) => void }) {
+export function TextInputArea({ onTextChange, generationLoading }: { onTextChange: (text: string, topic: string, difficulty: string) => void; generationLoading?: boolean }) {
   const [text, setText] = useState('')
   const [topic, setTopic] = useState('')
   const [difficulty, setDifficulty] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate')
@@ -71,7 +71,8 @@ export function TextInputArea({ onTextChange }: { onTextChange: (text: string, t
         </div>
       </div>
 
-      <Button type="primary" block disabled={!text.trim() && !topic.trim()} onClick={handleSubmit}>
+
+      <Button type="primary" block disabled={!text.trim() && !topic.trim()} onClick={handleSubmit} loading={generationLoading}>
         Generate Study Guide
       </Button>
     </Card>

@@ -11,11 +11,13 @@ export function FileUpload({
   onTextExtracted,
   maxFiles = 5,
   autoExtract = false,
+  generationSuccess = false,
 }: {
   onFilesChange: (files: File[]) => void
   onTextExtracted?: (combinedText: string, extractionResults: ExtractionResult[]) => void
   maxFiles?: number
   autoExtract?: boolean
+  generationSuccess?: boolean
 }) {
   const [files, setFiles] = useState<File[]>([])
   const [isExtracting, setIsExtracting] = useState(false)
@@ -162,10 +164,9 @@ export function FileUpload({
             />
           )}
           
-          {extractionResults.length > 0 && extractionResults.every(r => r.success) && (
+          {generationSuccess && (
             <Alert
-              message="Text extraction successful!"
-              description={`Extracted ${extractionResults.reduce((total, result) => total + result.text.length, 0)} characters from ${extractionResults.length} file${extractionResults.length > 1 ? 's' : ''}`}
+              message="Study Guide Generated Successfully!"
               type="success"
               showIcon
               style={{ marginTop: 8 }}
