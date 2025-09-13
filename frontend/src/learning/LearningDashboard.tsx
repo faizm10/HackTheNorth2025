@@ -187,10 +187,10 @@ export function LearningDashboard() {
               </Space>
             ),
             children: (
-              <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gap: 16 }}>
+              <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gap: 8 }}>
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
-                    <Card>
+                    <Card bordered={false}>
                       <Space direction="vertical" style={{ width: '100%' }}>
                         <Space>
                           <UploadOutlined />
@@ -204,7 +204,7 @@ export function LearningDashboard() {
                     </Card>
                   </Col>
                   <Col xs={24} md={12}>
-                    <Card>
+                    <Card bordered={false}>
                       <Space direction="vertical" style={{ width: '100%' }}>
                         <Space>
                           <FileTextOutlined />
@@ -218,41 +218,6 @@ export function LearningDashboard() {
                     </Card>
                   </Col>
                 </Row>
-
-                <Card>
-                  <Space style={{ width: '100%', justifyContent: 'center' }}>
-                    <Text type="secondary">OR</Text>
-                  </Space>
-                </Card>
-
-                <Card>
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Text strong style={{ textAlign: 'center' }}>Quick Start Templates</Text>
-                    <Row gutter={[12, 12]}>
-                      {[
-                        { topic: 'Calculus I', difficulty: 'intermediate', icon: '📊' },
-                        { topic: 'Python Programming', difficulty: 'beginner', icon: '🐍' },
-                        { topic: 'Data Structures', difficulty: 'advanced', icon: '🌳' },
-                        { topic: 'Statistics', difficulty: 'intermediate', icon: '📈' },
-                      ].map((t) => (
-                        <Col xs={12} md={6} key={t.topic}>
-                          <Button
-                            block
-                            onClick={() => handleTextChange(`I want to learn ${t.topic}`, t.topic, t.difficulty)}
-                          >
-                            <Space direction="vertical" style={{ width: '100%', alignItems: 'center' }}>
-                              <span style={{ fontSize: 20 }}>{t.icon}</span>
-                              <div>
-                                <div style={{ fontWeight: 600, fontSize: 12 }}>{t.topic}</div>
-                                <Text type="secondary" style={{ fontSize: 12 }}>{t.difficulty}</Text>
-                              </div>
-                            </Space>
-                          </Button>
-                        </Col>
-                      ))}
-                    </Row>
-                  </Space>
-                </Card>
 
                 {(studyContent || uploadedFiles.length > 0) && (
                   <div style={{ maxWidth: 720, margin: '0 auto' }}>
