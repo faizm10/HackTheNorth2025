@@ -26,12 +26,22 @@ export interface AssignmentsResult {
 export interface Requirement {
   id: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   category: string;
   module_id: string; // related module id (or 'none')
-  chunk_id: string;  // related chunk id
+  chunk_id: string; // related chunk id
 }
 
 export interface RequirementsResult {
   requirements: Requirement[];
+}
+
+export interface GradingResponse {
+  passed: boolean;
+  feedback: string;
+}
+
+export interface CurrentQuestion {
+  type: "quiz" | "shortAnswer";
+  data: any;
 }

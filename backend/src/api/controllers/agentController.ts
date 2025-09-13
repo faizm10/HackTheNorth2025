@@ -5,7 +5,11 @@ import {
 } from "./llmAPI.js";
 import { Request, Response } from "express";
 import { ChatCompletionMessageParam } from "openai/resources";
-import { answerGrading } from "./gradingController.js";
+import {
+  answerGrading,
+  gradeRequirementUnderstanding,
+} from "./gradingController.js";
+import { CurrentQuestion } from "../../types.js";
 
 type ChatRole = "system" | "user" | "assistant";
 type ChatMessage = { role: ChatRole; content: string };
@@ -16,6 +20,7 @@ const context = {
   currentRequirement: "The user must understand the concept of addition",
   completedRequirements: ["something"],
   currentModule: "Module 1",
+  currentQuestion: null as CurrentQuestion | null,
 };
 
 const TOOLS: any[] = [
@@ -37,6 +42,19 @@ const TOOLS: any[] = [
     function: {
       name: "generateShortAnswer",
       description: "Generate a short answer question based on the conversation",
+      parameters: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "gradeRequirementUnderstanding",
+      description:
+        "Evaluate the users understanding, and find if you can move to the next requirement",
       parameters: {
         type: "object",
         properties: {},
@@ -69,18 +87,7 @@ export const getResponse = async (req: Request, res: Response) => {
       }
     }
 
-    const result: any = await getLLMCompletion([
-      ...messages,
-      {
-        role: "system",
-        content:
-          "Based on the conversation, return to me only the string 'TEACH' if our next message should be a teaching message, or the string 'ASSESS' if our next message should assess the users knowledge on the current requirement ",
-      },
-    ]);
-
-    const mode = result.choices?.[0]?.message?.content || "TEACH";
-
-    const generatedMessage = await getLLMResponse(messages, { mode, model });
+    const generatedMessage = await getLLMResponse(messages, { model });
 
     res.json({
       success: true,
@@ -146,6 +153,7 @@ const useTool = async (toolCalls: any, messages: ChatMessage[]) => {
     switch (functionName) {
       case "generateQuiz":
         result = await generateQuiz(messages);
+        context.currentQuestion = { type: "quiz", data: result };
         return {
           role: "assistant",
           content: "Here's a short quiz:",
@@ -153,10 +161,27 @@ const useTool = async (toolCalls: any, messages: ChatMessage[]) => {
         };
       case "generateShortAnswer":
         result = await generateShortAnswer(messages);
+        context.currentQuestion = { type: "shortAnswer", data: result };
         return {
           role: "assistant",
           content: "Here's a short answer question:",
           tool: { type: "shortAnswer", data: result },
+        };
+      case "gradeRequirementUnderstanding":
+        result = await gradeRequirementUnderstanding(
+          messages,
+          context.currentRequirement
+        );
+        // Clear current question if grading passes
+        if (result.passed) {
+          context.currentQuestion = null;
+        }
+        return {
+          role: "assistant",
+          content: result.passed
+            ? "Great! You've demonstrated sufficient understanding of the current requirement."
+            : "Let's continue working on this requirement to ensure you have a solid understanding.",
+          tool: { type: "grading", data: result },
         };
       default:
         throw new Error(`Unknown tool: ${functionName}`);
@@ -183,7 +208,11 @@ export const getLLMResponse = async (
       model,
       messages: [
         ...messages,
-        { role: "system", content: JSON.stringify(extraContext) },
+        {
+          role: "system",
+          content:
+            "You are an AI tutor agent. Help the user learn and understand the concepts being discussed.",
+        },
       ] as any,
       tools: TOOLS as any,
       tool_choice: "auto",
@@ -281,26 +310,29 @@ export const gradeSubmission = async (req: Request, res: Response) => {
     // Call the grading controller to get the grading result
     const gradingResult = await answerGrading(question, answer);
 
+    // Clear current question if grading passed
+    if (gradingResult.passed) {
+      context.currentQuestion = null;
+    }
+
     // Add the grading result as a system message to the conversation
     const messagesWithGrading: ChatMessage[] = [
       ...messages,
       {
         role: "system",
-        content: `Grading Result: ${
-          gradingResult.choices?.[0]?.message?.content || gradingResult
-        }`,
+        content: `Grading Result: ${gradingResult.feedback} This is the feedback from the user's answer. Please take this into account with your teaching.`,
       },
     ];
 
     // Get the LLM's response based on the grading
+    // TODO: Add next requirement or end module
     const llmResponse = await getLLMResponse(messagesWithGrading, {
-      mode: "TEACH",
       model: MODEL,
     });
 
     res.json({
       success: true,
-      grading: gradingResult.choices?.[0]?.message?.content || gradingResult,
+      grading: gradingResult,
       response: llmResponse,
     });
   } catch (error: any) {
