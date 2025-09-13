@@ -1,0 +1,159 @@
+{
+  "assignments": [
+    {
+      "chunk_id": "c-001",
+      "module_id": "m1",
+      "confidence": 0.85
+    },
+    {
+      "chunk_id": "c-002",
+      "module_id": "m1",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-003",
+      "module_id": "m1",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-004",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-005",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-006",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-007",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-008",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-009",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-010",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-011",
+      "module_id": "m2",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-012",
+      "module_id": "m2",
+      "confidence": 0.85
+    },
+    {
+      "chunk_id": "c-013",
+      "module_id": "m2",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-014",
+      "module_id": "m1",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-015",
+      "module_id": "m2",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-016",
+      "module_id": "m5",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-017",
+      "module_id": "m8",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-018",
+      "module_id": "m8",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-019",
+      "module_id": "m3",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-020",
+      "module_id": "m4",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-021",
+      "module_id": "m4",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-022",
+      "module_id": "m5",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-023",
+      "module_id": "m5",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-024",
+      "module_id": "m5",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-025",
+      "module_id": "m6",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-026",
+      "module_id": "m6",
+      "confidence": 0.85
+    },
+    {
+      "chunk_id": "c-027",
+      "module_id": "m7",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-028",
+      "module_id": "m7",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-029",
+      "module_id": "m9",
+      "confidence": 0.9
+    },
+    {
+      "chunk_id": "c-030",
+      "module_id": "m9",
+      "confidence": 0.85
+    },
+    {
+      "chunk_id": "c-031",
+      "module_id": "m9",
+      "confidence": 0.85
+    }
+  ]
+}

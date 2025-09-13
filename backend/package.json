@@ -1,26 +1,17 @@
 {
-  "name": "martian-backend",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Backend-only Martian AI routing system",
-  "main": "martian/index.js",
+  "description": "CLI-only backend for text processing with Gemini",
+  "main": "src/cli.ts",
   "scripts": {
-    "test": "echo \"No tests specified\" && exit 0",
-    "start": "node martian/index.js",
-    "dev": "nodemon martian/index.js"
+    "dev": "tsx src/cli.ts"
   },
-  "keywords": ["ai", "martian", "routing", "openai", "backend"],
-  "author": "HackTheNorth2025",
-  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "nodemon": "^3.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "@types/node": "^20.10.0",
+    "tsx": "^4.6.0",
+    "typescript": "^5.3.0"
   }
 }
