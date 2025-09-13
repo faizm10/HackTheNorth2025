@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Tabs, Layout, Card, Typography, Button, Progress, Row, Col, Space, List } from 'antd'
-import { UploadOutlined, BulbOutlined, AimOutlined, ThunderboltOutlined, BookOutlined, CheckCircleOutlined, RocketOutlined, RiseOutlined, FileTextOutlined } from '@ant-design/icons'
+import { UploadOutlined, BulbOutlined, AimOutlined, BookOutlined, CheckCircleOutlined, RocketOutlined, RiseOutlined, FileTextOutlined } from '@ant-design/icons'
 import { FileUpload } from './FileUpload'
 import { TextInputArea } from './TextInputArea'
 import { StudyGuideGenerator } from './StudyGuideGenerator'
 import { PrerequisitesTracker } from './PrerequisitesTracker'
-import { XPProgressSystem } from './XPProgressSystem'
+// XP features removed
 import { StudySession } from './StudySession'
 import type { StudyGuide } from './types'
 
@@ -48,11 +48,11 @@ export function LearningDashboard() {
   ]
 
   const todaysLessons = [
-    { type: 'Lesson', title: 'Vector Addition and Scalar Multiplication', xp: 7, progress: 50, icon: <BookOutlined /> },
-    { type: 'Assessment', title: 'Quiz 1', xp: 15, progress: 0, icon: <CheckCircleOutlined /> },
-    { type: 'Multistep', title: 'Solving Systems of Linear Equations', xp: 15, progress: 0, icon: <AimOutlined /> },
-    { type: 'Lesson', title: 'Matrix Multiplication Properties', xp: 14, progress: 0, icon: <BookOutlined /> },
-    { type: 'Review', title: 'Linear Independence', xp: 5, progress: 0, icon: <RiseOutlined /> },
+    { type: 'Lesson', title: 'Vector Addition and Scalar Multiplication', progress: 50, icon: <BookOutlined /> },
+    { type: 'Assessment', title: 'Quiz 1', progress: 0, icon: <CheckCircleOutlined /> },
+    { type: 'Multistep', title: 'Solving Systems of Linear Equations', progress: 0, icon: <AimOutlined /> },
+    { type: 'Lesson', title: 'Matrix Multiplication Properties', progress: 0, icon: <BookOutlined /> },
+    { type: 'Review', title: 'Linear Independence', progress: 0, icon: <RiseOutlined /> },
   ]
 
   const handleFilesChange = (files: File[]) => setUploadedFiles(files)
@@ -83,10 +83,6 @@ export function LearningDashboard() {
             </div>
           </Space>
           <Space>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 600, fontSize: 12 }}>1,247 XP</div>
-              <Text type="secondary" style={{ fontSize: 12 }}>Level 8</Text>
-            </div>
             <div style={{ width: 32, height: 32, background: '#1677ff', borderRadius: '50%', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>JD</div>
           </Space>
         </div>
@@ -143,7 +139,6 @@ export function LearningDashboard() {
                               </div>
                             </Space>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: 12, fontWeight: 500 }}>{lesson.xp} XP</div>
                               {lesson.progress > 0 && <Text type="secondary" style={{ fontSize: 12 }}>{lesson.progress}%</Text>}
                             </div>
                           </div>
@@ -285,15 +280,7 @@ export function LearningDashboard() {
             ),
             children: <PrerequisitesTracker topic="Calculus" />,
           },
-          {
-            key: 'progress',
-            label: (
-              <Space>
-                <ThunderboltOutlined /> Progress
-              </Space>
-            ),
-            children: <XPProgressSystem />,
-          },
+          // Progress tab removed
         ]} />
       </Content>
     </Layout>

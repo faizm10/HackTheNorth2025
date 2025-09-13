@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Layout, Card, Typography, Progress, Button, Tag, Divider } from 'antd'
 import {
   LeftOutlined,
@@ -177,7 +177,7 @@ export function StudySession({
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
-      <Sider width={300} theme="light" style={{ padding: 16, borderRight: '1px solid #f0f0f0' }}>
+      <Sider width={240} theme="light" style={{ padding: 16, borderRight: '1px solid #f0f0f0' }}>
         <Button onClick={onBack} style={{ marginBottom: 12 }} icon={<LeftOutlined />}>Back to Study</Button>
         <Title level={4} style={{ margin: 0 }}>{guide.title}</Title>
         <Text type="secondary">{currentUnitData.unitName} • Lesson {currentLesson + 1} of {currentUnitData.lessons.length}</Text>
@@ -208,13 +208,10 @@ export function StudySession({
                       marginBottom: 4,
                     }}
                   >
-                    <SpaceBetween>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {typeIcon(lesson.type)}
-                        <Text style={{ fontSize: 12 }}>{lesson.title}</Text>
-                      </span>
-                      <Tag color="blue">{lesson.xp} XP</Tag>
-                    </SpaceBetween>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                      {typeIcon(lesson.type)}
+                      <Text style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lesson.title}</Text>
+                    </span>
                   </div>
                 )
               })}
@@ -234,7 +231,6 @@ export function StudySession({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Tag color={difficultyColor(currentLessonData.difficulty)}>{currentLessonData.difficulty}</Tag>
-                <Tag>{currentLessonData.xp} XP</Tag>
               </div>
             </div>
             <Title level={3} style={{ marginTop: 8 }}>{currentLessonData.title}</Title>
@@ -274,6 +270,3 @@ export function StudySession({
   )
 }
 
-function SpaceBetween({ children }: { children: ReactNode }) {
-  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>{children}</div>
-}
