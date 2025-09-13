@@ -9,7 +9,7 @@ import {
   LockOutlined,
 } from '@ant-design/icons'
 import { ChatTutor } from './ChatTutor'
-import type { CourseUnit } from './types'
+import type { CourseUnit, StudyGuide } from './types'
 import { QuizPanel } from './QuizPanel'
 
 const { Sider, Content } = Layout
@@ -19,7 +19,7 @@ export function StudySession({
   guide,
   onBack,
 }: {
-  guide: { id: number; title: string; overallMastery: number; units: Array<{ name: string; topics: number; mastery: number }> }
+  guide: StudyGuide
   onBack: () => void
 }) {
   const [currentUnit, setCurrentUnit] = useState(0)
@@ -27,7 +27,19 @@ export function StudySession({
   const [completedLinear, setCompletedLinear] = useState(-1) // highest completed linear index
   const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
 
-  const courseStructure: CourseUnit[] = [
+  const courseStructure: CourseUnit[] = guide.sections && guide.sections.length > 0
+    ? [
+        {
+          unitName: 'Lessons',
+          lessons: guide.sections.map((s) => ({
+            title: s.title,
+            type: 'Lesson',
+            xp: 10,
+            content: s.content || '',
+          })),
+        },
+      ]
+    : [
     {
       unitName: 'Vector Operations',
       lessons: [
@@ -182,7 +194,7 @@ export function StudySession({
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
       <Sider width={240} theme="light" style={{ padding: 16, borderRight: '1px solid #f0f0f0' }}>
         <Button onClick={onBack} style={{ marginBottom: 12 }} icon={<LeftOutlined />}>Back to Study</Button>
-        <Title level={4} style={{ margin: 0 }}>{guide.title}</Title>
+        <Title level={4} style={{ margin: 0 }}>{currentLessonData.title}</Title>
         <Text type="secondary">{currentUnitData.unitName} • Lesson {currentLesson + 1} of {currentUnitData.lessons.length}</Text>
         <div style={{ marginTop: 12 }}>
           <Progress percent={Math.round(progressPct)} size="small" />
@@ -266,7 +278,7 @@ export function StudySession({
             {/* <div style={{ minHeight: 0 }}> */}
               <ChatTutor
                 key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
-                currentTopic={`${guide.title} - ${currentUnitData.unitName}: ${currentLessonData.title}`}
+                currentTopic={currentLessonData.title}
                 lessonContent={currentLessonData.content}
                 initialLessonText={currentLessonData.content}
               />
@@ -274,7 +286,7 @@ export function StudySession({
             {/* <div style={{ minHeight: 0 }}>
               <QuizPanel
                 key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
-                topic={guide.title}
+                topic={currentLessonData.title}
                 lessonTitle={currentLessonData.title}
                 content={currentLessonData.content}
                 onComplete={({ correct, total }) => {
