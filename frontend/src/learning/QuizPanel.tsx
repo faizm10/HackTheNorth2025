@@ -2,8 +2,31 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import { Card, Typography, Space, Progress, Radio, Button, Result, Tag, Alert, Divider } from 'antd'
 import { QuestionCircleOutlined, CheckCircleTwoTone, CloseCircleTwoTone, RedoOutlined } from '@ant-design/icons'
 
-const { Text } = Typography
+const { Text } = Typography;
 
+/**
+ * Represents a single quiz question with multiple choice options.
+ *
+ * @interface QuizQuestion
+ * @property {string} id - Unique identifier for the question
+ * @property {string} prompt - The question text displayed to the user
+ * @property {string[]} options - Array of possible answer choices
+ * @property {number} answerIndex - Index of the correct answer in the options array (0-based)
+ * @property {string} [explanation] - Optional explanation shown after answering
+ * @property {string} [tag] - Optional category tag for the question (e.g., "Concept", "Strategy")
+ *
+ * @example
+ * ```typescript
+ * const question: QuizQuestion = {
+ *   id: 'q1',
+ *   prompt: 'What is the magnitude of vector (3, 4)?',
+ *   options: ['3', '4', '5', '7'],
+ *   answerIndex: 2, // '5' is correct
+ *   explanation: 'Magnitude = √(3² + 4²) = √(9 + 16) = √25 = 5',
+ *   tag: 'Vector Math'
+ * }
+ * ```
+ */
 export interface QuizQuestion {
   id: string
   prompt: string
@@ -15,12 +38,15 @@ export interface QuizQuestion {
 
 export function QuizPanel({ topic, lessonTitle, content, onComplete }: { topic: string; lessonTitle: string; content: string; onComplete?: (r: { passed: boolean; correct: number; total: number; percent: number }) => void }) {
   const questions: QuizQuestion[] = useMemo(() => {
-    // Simple heuristic to craft questions from topic/content
-    const base = topic || lessonTitle || 'This lesson'
-    const snippet = (content || '').replace(/\n+/g, ' ').trim().slice(0, 120)
+    // Create personalized base reference for questions
+    const base = topic || lessonTitle || "This lesson";
+
+    // Extract content snippet for context (limit to 120 chars for readability)
+    const snippet = (content || "").replace(/\n+/g, " ").trim().slice(0, 120);
+
     return [
       {
-        id: 'q1',
+        id: "q1",
         prompt: `Which statement best describes ${base}?`,
         options: [
           `${base} concerns properties unrelated to the lesson`,
@@ -29,37 +55,45 @@ export function QuizPanel({ topic, lessonTitle, content, onComplete }: { topic: 
           `${base} has no practical applications`,
         ],
         answerIndex: 1,
-        explanation: `The lesson emphasizes understanding core ideas rather than rote memorization, and connects to practical uses.${snippet ? `\n\nBased on lesson: "${snippet}${snippet.length>=120?'…':''}"` : ''}`,
-        tag: 'Concept',
+        explanation: `The lesson emphasizes understanding core ideas rather than rote memorization, and connects to practical uses.${
+          snippet
+            ? `\n\nBased on lesson: "${snippet}${
+                snippet.length >= 120 ? "…" : ""
+              }"`
+            : ""
+        }`,
+        tag: "Concept",
       },
       {
-        id: 'q2',
-        prompt: 'Choose the most accurate next step when stuck on a problem:',
+        id: "q2",
+        prompt: "Choose the most accurate next step when stuck on a problem:",
         options: [
-          'Ignore the problem and move on',
-          'Reframe the question and break it into smaller steps',
-          'Try random answers until one works',
-          'Copy a solution without understanding',
+          "Ignore the problem and move on",
+          "Reframe the question and break it into smaller steps",
+          "Try random answers until one works",
+          "Copy a solution without understanding",
         ],
         answerIndex: 1,
-        explanation: 'Breaking problems into steps helps you reason, find missing pieces, and improve transfer to new problems.',
-        tag: 'Strategy',
+        explanation:
+          "Breaking problems into steps helps you reason, find missing pieces, and improve transfer to new problems.",
+        tag: "Strategy",
       },
       {
-        id: 'q3',
-        prompt: 'What is a good way to validate your understanding?',
+        id: "q3",
+        prompt: "What is a good way to validate your understanding?",
         options: [
-          'Explain the idea in your own words or teach it to someone else',
-          'Rely solely on memorized formulas',
-          'Skip practice questions',
-          'Focus only on speed',
+          "Explain the idea in your own words or teach it to someone else",
+          "Rely solely on memorized formulas",
+          "Skip practice questions",
+          "Focus only on speed",
         ],
         answerIndex: 0,
-        explanation: 'Explaining concepts in your own words reveals gaps and solidifies understanding.',
-        tag: 'Metacognition',
+        explanation:
+          "Explaining concepts in your own words reveals gaps and solidifies understanding.",
+        tag: "Metacognition",
       },
-    ]
-  }, [topic, lessonTitle])
+    ];
+  }, [topic, lessonTitle, content]);
 
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
@@ -71,15 +105,22 @@ export function QuizPanel({ topic, lessonTitle, content, onComplete }: { topic: 
   const [reported, setReported] = useState(false)
 
   const submit = () => {
-    const q = questions[current]
-    if (!q || selected === null) return
-    const isCorrect = selected === q.answerIndex
-    setAnswers((prev) => [...prev, { q, selected, correct: isCorrect }])
-    setSelected(null)
-    if (current < questions.length - 1) setCurrent((c) => c + 1)
-    else setCurrent((c) => c + 1) // move past last to show summary
-  }
+    const q = questions[current];
+    if (!q || selected === null) return;
 
+    const isCorrect = selected === q.answerIndex;
+    setAnswers((prev) => [...prev, { q, selected, correct: isCorrect }]);
+    setSelected(null);
+
+    // Advance to next question or completion screen
+    if (current < questions.length - 1) setCurrent((c) => c + 1);
+    else setCurrent((c) => c + 1); // move past last to show summary
+  };
+
+  /**
+   * Resets the quiz to initial state for retaking.
+   * Clears all progress, answers, and returns to first question.
+   */
   const restart = () => {
     setCurrent(0)
     setSelected(null)

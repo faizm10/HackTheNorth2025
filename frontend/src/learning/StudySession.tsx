@@ -41,112 +41,115 @@ export function StudySession({
       ]
     : [
     {
-      unitName: 'Vector Operations',
+      unitName: "Vector Operations",
       lessons: [
         {
-          title: 'Introduction to Vectors',
-          type: 'Lesson',
+          title: "Introduction to Vectors",
+          type: "Lesson",
           xp: 7,
           content:
-            'A vector is a mathematical object that has both magnitude (length) and direction. In physics, vectors represent quantities like velocity, force, and displacement. In mathematics, they form the foundation of linear algebra. Vectors can be represented geometrically as arrows or algebraically as ordered lists of numbers.',
+            "A vector is a mathematical object that has both magnitude (length) and direction. In physics, vectors represent quantities like velocity, force, and displacement. In mathematics, they form the foundation of linear algebra. Vectors can be represented geometrically as arrows or algebraically as ordered lists of numbers.",
           keyPoints: [
-            'Vectors have both magnitude and direction',
-            'Represented as arrows or coordinate lists',
-            'Fundamental to linear algebra and physics',
+            "Vectors have both magnitude and direction",
+            "Represented as arrows or coordinate lists",
+            "Fundamental to linear algebra and physics",
           ],
           examples:
-            '**2D Vector Example:** v = (3, 4) has magnitude sqrt(3^2 + 4^2) = 5. Unit vector: v/|v| = (3/5, 4/5).',
-          difficulty: 'beginner',
+            "**2D Vector Example:** v = (3, 4) has magnitude sqrt(3^2 + 4^2) = 5. Unit vector: v/|v| = (3/5, 4/5).",
+          difficulty: "beginner",
         },
         {
-          title: 'Vector Addition and Scalar Multiplication',
-          type: 'Lesson',
+          title: "Vector Addition and Scalar Multiplication",
+          type: "Lesson",
           xp: 8,
           content:
-            'Vector addition uses the tip-to-tail rule or parallelogram method. Scalar multiplication changes a vector\'s magnitude (and reverses direction for negative scalars). These operations satisfy commutativity, associativity, and distributivity.',
+            "Vector addition uses the tip-to-tail rule or parallelogram method. Scalar multiplication changes a vector's magnitude (and reverses direction for negative scalars). These operations satisfy commutativity, associativity, and distributivity.",
           keyPoints: [
-            'Tip-to-tail (parallelogram) rule for addition',
-            'Scalar multiplication scales magnitude',
-            'Operations satisfy algebraic properties',
+            "Tip-to-tail (parallelogram) rule for addition",
+            "Scalar multiplication scales magnitude",
+            "Operations satisfy algebraic properties",
           ],
-          examples: 'Example: (3,4) + (1,2) = (4,6). 3·(2,1) = (6,3).',
-          difficulty: 'beginner',
+          examples: "Example: (3,4) + (1,2) = (4,6). 3·(2,1) = (6,3).",
+          difficulty: "beginner",
         },
         {
-          title: 'Dot Product and Cross Product',
-          type: 'Assessment',
+          title: "Dot Product and Cross Product",
+          type: "Assessment",
           xp: 15,
           content:
-            'The dot product measures directional similarity and yields a scalar. The cross product (in 3D) yields a vector perpendicular to both inputs. These have important geometric and physical interpretations.',
+            "The dot product measures directional similarity and yields a scalar. The cross product (in 3D) yields a vector perpendicular to both inputs. These have important geometric and physical interpretations.",
           keyPoints: [
-            'Dot product relates to angles and projections',
-            'Cross product gives perpendicular vector in 3D',
-            'Used widely in physics and graphics',
+            "Dot product relates to angles and projections",
+            "Cross product gives perpendicular vector in 3D",
+            "Used widely in physics and graphics",
           ],
           examples:
-            'Dot: u·v = |u||v|cosθ. For u=(2,1), v=(1,3) → 2*1 + 1*3 = 5. Cross: u×v uses 3×3 determinant with i, j, k.',
-          difficulty: 'intermediate',
+            "Dot: u·v = |u||v|cosθ. For u=(2,1), v=(1,3) → 2*1 + 1*3 = 5. Cross: u×v uses 3×3 determinant with i, j, k.",
+          difficulty: "intermediate",
         },
       ],
     },
     {
-      unitName: 'Matrix Fundamentals',
+      unitName: "Matrix Fundamentals",
       lessons: [
         {
-          title: 'Introduction to Matrices',
-          type: 'Lesson',
+          title: "Introduction to Matrices",
+          type: "Lesson",
           xp: 8,
           content:
-            'A matrix is a rectangular array of numbers used to represent linear transformations, systems of equations, and data. Matrices are described by their dimensions m×n and include special types like identity and zero matrices.',
+            "A matrix is a rectangular array of numbers used to represent linear transformations, systems of equations, and data. Matrices are described by their dimensions m×n and include special types like identity and zero matrices.",
           keyPoints: [
-            'Rectangular arrays with rows and columns',
-            'Represent transformations and systems',
-            'Identified by dimensions (m×n)',
+            "Rectangular arrays with rows and columns",
+            "Represent transformations and systems",
+            "Identified by dimensions (m×n)",
           ],
-          examples: '2×3 matrix: [[1,2,3],[4,5,6]]. Identity: [[1,0],[0,1]].',
-          difficulty: 'beginner',
+          examples: "2×3 matrix: [[1,2,3],[4,5,6]]. Identity: [[1,0],[0,1]].",
+          difficulty: "beginner",
         },
         {
-          title: 'Matrix Operations',
-          type: 'Lesson',
+          title: "Matrix Operations",
+          type: "Lesson",
           xp: 10,
           content:
-            'Addition and subtraction are element-wise. Multiplication uses the row-by-column rule and represents composition of transformations. Matrix multiplication is generally not commutative.',
+            "Addition and subtraction are element-wise. Multiplication uses the row-by-column rule and represents composition of transformations. Matrix multiplication is generally not commutative.",
           keyPoints: [
-            'Add/subtract element-wise',
-            'Row-by-column multiplication',
-            'Not commutative in general',
+            "Add/subtract element-wise",
+            "Row-by-column multiplication",
+            "Not commutative in general",
           ],
           examples:
-            'For A=[[1,2],[3,4]], B=[[5,6],[7,8]], AB=[[19,22],[43,50]].',
-          difficulty: 'intermediate',
+            "For A=[[1,2],[3,4]], B=[[5,6],[7,8]], AB=[[19,22],[43,50]].",
+          difficulty: "intermediate",
         },
       ],
     },
     {
-      unitName: 'Linear Transformations',
+      unitName: "Linear Transformations",
       lessons: [
         {
-          title: 'Understanding Linear Transformations',
-          type: 'Lesson',
+          title: "Understanding Linear Transformations",
+          type: "Lesson",
           xp: 12,
           content:
-            'A linear transformation preserves vector addition and scalar multiplication and can be represented by a matrix. Common transformations include rotations, reflections, scaling, and projections.',
+            "A linear transformation preserves vector addition and scalar multiplication and can be represented by a matrix. Common transformations include rotations, reflections, scaling, and projections.",
           keyPoints: [
-            'Preserve addition and scalar multiplication',
-            'Represented by matrices',
-            'Connect algebra with geometry',
+            "Preserve addition and scalar multiplication",
+            "Represented by matrices",
+            "Connect algebra with geometry",
           ],
           examples:
-            'Rotation (2D): [[cosθ, -sinθ],[sinθ, cosθ]]. Scaling: [[a,0],[0,b]].',
-          difficulty: 'intermediate',
+            "Rotation (2D): [[cosθ, -sinθ],[sinθ, cosθ]]. Scaling: [[a,0],[0,b]].",
+          difficulty: "intermediate",
         },
       ],
     },
-  ]
+  ];
 
-  const currentUnitData = courseStructure[currentUnit]
-  const currentLessonData = currentUnitData.lessons[currentLesson]
+  /** Currently selected unit data from the course structure */
+  const currentUnitData = courseStructure[currentUnit];
+
+  /** Currently selected lesson data within the current unit */
+  const currentLessonData = currentUnitData.lessons[currentLesson];
 
   const toLinearIndex = (unitIdx: number, lessonIdx: number) =>
     courseStructure.slice(0, unitIdx).reduce((s, u) => s + u.lessons.length, 0) + lessonIdx
@@ -167,19 +170,30 @@ export function StudySession({
 
     // Navigate to next
     if (currentLesson < currentUnitData.lessons.length - 1) {
-      setCurrentLesson((c) => c + 1)
+      setCurrentLesson((c) => c + 1);
     } else if (currentUnit < courseStructure.length - 1) {
-      setCurrentUnit((u) => u + 1)
-      setCurrentLesson(0)
+      setCurrentUnit((u) => u + 1);
+      setCurrentLesson(0);
     }
-  }
+  };
 
+  /**
+   * Goes back to the previous lesson in the course sequence.
+   *
+   * Navigation Logic:
+   * 1. If not at first lesson in unit → go to previous lesson
+   * 2. If at first lesson but not first unit → go to last lesson of previous unit
+   * 3. If at very first lesson → no action (stay on first lesson)
+   *
+   * This enables backward navigation while maintaining the logical
+   * course flow and unit structure.
+   */
   const prevLesson = () => {
     if (currentLesson > 0) {
-      setCurrentLesson((c) => c - 1)
+      setCurrentLesson((c) => c - 1);
     } else if (currentUnit > 0) {
-      setCurrentUnit((u) => u - 1)
-      setCurrentLesson(courseStructure[currentUnit - 1].lessons.length - 1)
+      setCurrentUnit((u) => u - 1);
+      setCurrentLesson(courseStructure[currentUnit - 1].lessons.length - 1);
     }
   }
 
@@ -217,8 +231,15 @@ export function StudySession({
         <Divider />
         <Title level={5}>Course Units</Title>
         {courseStructure.map((unit, unitIndex) => (
-          <Card key={unit.unitName} size="small" style={{ marginBottom: 8 }} bodyStyle={{ padding: 8 }}>
-            <Text strong style={{ fontSize: 12 }}>{unit.unitName}</Text>
+          <Card
+            key={unit.unitName}
+            size="small"
+            style={{ marginBottom: 8 }}
+            bodyStyle={{ padding: 8 }}
+          >
+            <Text strong style={{ fontSize: 12 }}>
+              {unit.unitName}
+            </Text>
             <div style={{ marginTop: 8 }}>
               {unit.lessons.map((lesson, lessonIndex) => {
                 const active = unitIndex === currentUnit && lessonIndex === currentLesson
@@ -235,7 +256,7 @@ export function StudySession({
                       }
                     }}
                     style={{
-                      padding: '6px 8px',
+                      padding: "6px 8px",
                       borderRadius: 6,
                       cursor: unlocked ? 'pointer' : 'not-allowed',
                       background: active ? '#e6f7ff' : undefined,
@@ -260,25 +281,48 @@ export function StudySession({
                       ) : null}
                     </span>
                   </div>
-                )
+                );
               })}
             </div>
           </Card>
         ))}
       </Sider>
 
-      <Content style={{ padding: 24, display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto 1fr', gap: 12 }}>
+      <Content
+        style={{
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            display: "grid",
+            gridTemplateRows: "auto 1fr",
+            gap: 12,
+          }}
+        >
           {/* Header Card */}
           <Card bodyStyle={{ padding: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {typeIcon(currentLessonData.type)}
                 <Text type="secondary">{currentLessonData.type}</Text>
               </div>
               <div />
             </div>
-            <Title level={4} style={{ margin: '4px 0 0' }}>{currentLessonData.title}</Title>
+            <Title level={4} style={{ margin: "4px 0 0" }}>
+              {currentLessonData.title}
+            </Title>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
               <Button size="small" onClick={prevLesson} disabled={currentUnit === 0 && currentLesson === 0} icon={<LeftOutlined />}>Previous</Button>
@@ -297,6 +341,13 @@ export function StudySession({
                 currentTopic={currentLessonData.title}
                 lessonContent={currentLessonData.content}
                 initialLessonText={currentLessonData.content}
+                moduleName={`${guide.title} - ${currentUnitData.unitName}`}
+                requirements={
+                  currentLessonData.keyPoints &&
+                  currentLessonData.keyPoints.length > 0
+                    ? currentLessonData.keyPoints
+                    : undefined
+                }
               />
             {/* </div> */}
             {/* <div style={{ minHeight: 0 }}>
@@ -320,6 +371,5 @@ export function StudySession({
         </div>
       </Content>
     </Layout>
-  )
+  );
 }
-
