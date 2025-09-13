@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saved Results Viewer</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container { 
+            background: white; 
+            border-radius: 16px; 
+            padding: 40px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .controls { 
+            display: grid; 
+            grid-template-columns: 1fr 300px auto auto; 
+            gap: 15px; 
+            margin-bottom: 30px;
+            align-items: end;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 12px 16px; 
+            border: 2px solid #e1e8ed; 
+            border-radius: 8px; 
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        button.secondary { 
+            background: linear-gradient(135deg, #6c757d, #495057);
+            box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+        }
+        button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+        }
+        button:disabled { 
+            background: #a0a4a8; 
+            cursor: not-allowed; 
+            transform: none;
+            box-shadow: none;
+        }
+        .status { 
+            padding: 12px 16px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .status.loading {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+        }
+        .status.success {
+            background: linear-gradient(135deg, #00b894, #00a085);
+            color: white;
+        }
+        .list { margin-top: 20px; }
+        .card { 
+            background: #fff; 
+            border: 1px solid #e1e8ed; 
+            border-left: 4px solid #667eea; 
+            border-radius: 12px; 
+            padding: 24px; 
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .card-id {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .card-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .card-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .card-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .meta { 
+            color: #6c757d; 
+            font-size: 13px; 
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .meta::before {
+            content: "🕒";
+        }
+        details {
+            margin: 16px 0;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        summary {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        summary:hover {
+            background: #e9ecef;
+        }
+        pre { 
+            background: #f8f9fa; 
+            padding: 16px; 
+            border-radius: 0;
+            overflow-x: auto; 
+            font-size: 13px; 
+            border: none;
+            margin: 0;
+            line-height: 1.5;
+            color: #000;
+        }
+        .error { 
+            background: linear-gradient(135deg, #ff7675, #d63031);
+            color: white; 
+            padding: 16px; 
+            border-radius: 8px; 
+            border: none;
+            font-weight: 500;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state::before {
+            content: "📭";
+            font-size: 48px;
+            display: block;
+            margin-bottom: 16px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+    <link rel="icon" href="/favicon.ico">
+    <meta name="color-scheme" content="light dark">
+    <meta name="description" content="View saved processing results from Supabase via backend API.">
+</head>
+<body>
+    <div class="container">
+        <h1>☁️ Saved Results Viewer</h1>
+        <div class="controls">
+            <div class="form-group">
+                <label for="resultsApiUrl">API Endpoint</label>
+                <input id="resultsApiUrl" type="text" value="http://localhost:3001/api/results" placeholder="Results API URL" />
+            </div>
+            <div class="form-group">
+                <label for="resultId">Result ID (optional)</label>
+                <input id="resultId" type="text" placeholder="Enter specific result ID" />
+            </div>
+            <button id="fetchBtn" onclick="fetchResults()">🔍 Fetch Results</button>
+            <button class="secondary" onclick="clearList()">🗑️ Clear</button>
+        </div>
+        <div id="status"></div>
+        <div id="list" class="list"></div>
+    </div>
+
+    <script>
+        async function fetchResults() {
+            const base = document.getElementById('resultsApiUrl').value.trim() || '/api/results';
+            const id = document.getElementById('resultId').value.trim();
+            const url = id ? `${base.replace(/\/$/, '')}/${encodeURIComponent(id)}` : base;
+            const fetchBtn = document.getElementById('fetchBtn');
+            const status = document.getElementById('status');
+            const list = document.getElementById('list');
+
+            fetchBtn.disabled = true;
+            status.innerHTML = '<div class="status loading">⏳ Loading results...</div>';
+            try {
+                const resp = await fetch(url);
+                const body = await resp.json();
+                if (!resp.ok) throw new Error(body.error || `HTTP ${resp.status}`);
+                if (id) {
+                    renderOne(body.data);
+                    status.innerHTML = `<div class="status success">✅ Fetched result: ${id}</div>`;
+                } else {
+                    renderMany(body.data || []);
+                    const count = Array.isArray(body.data) ? body.data.length : 0;
+                    status.innerHTML = `<div class="status success">✅ Fetched ${count} result${count !== 1 ? 's' : ''}</div>`;
+                }
+            } catch (e) {
+                list.innerHTML = `<div class="error"><strong>❌ Error:</strong> ${e.message}</div>`;
+                status.innerHTML = '';
+            } finally {
+                fetchBtn.disabled = false;
+            }
+        }
+
+        function clearList() {
+            document.getElementById('list').innerHTML = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        function renderMany(items) {
+            if (!Array.isArray(items)) {
+                document.getElementById('list').innerHTML = '<div class="error">Unexpected response format.</div>';
+                return;
+            }
+            if (items.length === 0) {
+                document.getElementById('list').innerHTML = '<div class="empty-state">No results found</div>';
+                return;
+            }
+            document.getElementById('list').innerHTML = items.map(renderCardHtml).join('');
+        }
+
+        function renderOne(item) {
+            document.getElementById('list').innerHTML = renderCardHtml(item);
+        }
+
+        function renderCardHtml(item) {
+            if (!item) return '';
+            const id = item.id || '(no id)';
+            const created = item.created_at ? new Date(item.created_at).toLocaleString() : '';
+            const success = item.success;
+            const data = item.data || {};
+            const metadata = item.metadata || {};
+            
+            // Extract stats from metadata if available
+            const stats = metadata.textLength || metadata.chunkCount || metadata.moduleCount ? `
+                <div class="stats">
+                    ${metadata.textLength ? `<div class="stat-card"><div class="stat-number">${metadata.textLength}</div><div class="stat-label">Characters</div></div>` : ''}
+                    ${metadata.chunkCount ? `<div class="stat-card"><div class="stat-number">${metadata.chunkCount}</div><div class="stat-label">Chunks</div></div>` : ''}
+                    ${metadata.moduleCount ? `<div class="stat-card"><div class="stat-number">${metadata.moduleCount}</div><div class="stat-label">Modules</div></div>` : ''}
+                    ${metadata.assignmentCount ? `<div class="stat-card"><div class="stat-number">${metadata.assignmentCount}</div><div class="stat-label">Assignments</div></div>` : ''}
+                    ${metadata.requirementCount ? `<div class="stat-card"><div class="stat-number">${metadata.requirementCount}</div><div class="stat-label">Requirements</div></div>` : ''}
+                </div>` : '';
+            
+            return `
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-id">${id}</div>
+                    <div class="card-status ${success ? 'success' : 'error'}">${success ? 'Success' : 'Failed'}</div>
+                </div>
+                <div class="meta">${created}</div>
+                ${stats}
+                <div style="margin-top:16px">
+                    <details open>
+                        <summary><strong>📊 Metadata</strong></summary>
+                        <pre>${escapeHtml(JSON.stringify(metadata, null, 2))}</pre>
+                    </details>
+                    <details>
+                        <summary><strong>📄 Data</strong></summary>
+                        <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+                    </details>
+                </div>
+            </div>`;
+        }
+
+        function escapeHtml(str) {
+            return str
+              .replaceAll('&', '&amp;')
+              .replaceAll('<', '&lt;')
+              .replaceAll('>', '&gt;');
+        }
+    </script>
+</body>
+</html>
+
+
