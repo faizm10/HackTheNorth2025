@@ -146,7 +146,11 @@ src/
 
 ### Environment Variables
 
-- `GEMINI_API_KEY` - Your Google Gemini API key (required)
+- `LLM_PROVIDER` - `gemini` (default) or `martian`
+- `GEMINI_API_KEY` - Your Google Gemini API key (required if LLM_PROVIDER=gemini)
+- `MARTIAN_API_KEY` - Your Martian API key (required if LLM_PROVIDER=martian)
+- `MARTIAN_BASE_URL` - Override Martian base URL (optional, default: https://api.withmartian.com)
+- `LLM_MODEL` - Model name when using Martian (e.g. `google/gemini-2.5-flash`, `openai/gpt-4.1-nano`)
 - `PORT` - Server port (default: 3001)
 
 ### Text Processing Parameters

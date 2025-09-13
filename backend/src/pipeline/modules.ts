@@ -1,9 +1,9 @@
-import { GeminiClient } from '../llm/gemini.js';
+import { getLlmClient } from '../llm/provider.js';
 import { getModulesPrompt } from '../prompts.js';
 import { ModulesResult } from '../types.js';
 
 export async function runModules(text: string): Promise<ModulesResult> {
-  const client = new GeminiClient();
+  const client = getLlmClient();
   const prompt = getModulesPrompt(text, 12);
   
   console.log('🤖 Generating modules with Gemini...');

@@ -1,4 +1,4 @@
-import { GeminiClient } from '../llm/gemini.js';
+import { getLlmClient } from '../llm/provider.js';
 import { chunkRequirementsPrompt } from '../prompts.js';
 import { Requirement } from '../types.js';
 
@@ -8,7 +8,7 @@ export async function extractChunkRequirements(
   moduleId: string,
   moduleTitle: string
 ): Promise<Requirement[]> {
-  const client = new GeminiClient();
+  const client = getLlmClient();
   const prompt = chunkRequirementsPrompt(chunkText, moduleTitle);
 
   const response = await client.generateContent(prompt);
