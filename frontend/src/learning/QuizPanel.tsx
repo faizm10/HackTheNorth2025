@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { Card, Typography, Space, Progress, Radio, Button, Result, Tag, Alert, Divider } from 'antd'
 import { QuestionCircleOutlined, CheckCircleTwoTone, CloseCircleTwoTone, RedoOutlined } from '@ant-design/icons'
 
@@ -66,6 +66,8 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
   const [answers, setAnswers] = useState<Array<{ q: QuizQuestion; selected: number; correct: boolean }>>([])
   const correctCount = answers.filter((a) => a.correct).length
   const progress = Math.round(((current) / questions.length) * 100)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
 
   const submit = () => {
     const q = questions[current]
@@ -83,6 +85,10 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
     setAnswers([])
   }
 
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [answers, current])
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={12}>
       <Card>
@@ -98,67 +104,76 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
         </div>
       </Card>
 
-      {/* Completed Q&A stack */}
-      {answers.map(({ q, selected, correct }) => (
-        <Card key={q.id}>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Space>
-              {q.tag && <Tag>{q.tag}</Tag>}
-              <Text strong>{q.prompt}</Text>
-            </Space>
-            <Divider style={{ margin: '8px 0' }} />
-            <Alert
-              showIcon
-              type={correct ? 'success' : 'error'}
-              message={
-                <Space>
-                  {correct ? <CheckCircleTwoTone twoToneColor="#52c41a" /> : <CloseCircleTwoTone twoToneColor="#ff4d4f" />}
-                  {correct ? 'Correct' : 'Not quite'}
-                </Space>
-              }
-              description={q.explanation}
-            />
-          </Space>
-        </Card>
-      ))}
-
-      {/* Current question (if any) */}
-      {current < questions.length ? (
-        <Card>
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Space>
-              {questions[current].tag && <Tag>{questions[current].tag}</Tag>}
-              <Text strong>{questions[current].prompt}</Text>
-            </Space>
-
-            <Radio.Group onChange={(e) => setSelected(e.target.value)} value={selected} style={{ width: '100%' }}>
+      <Card bodyStyle={{ padding: 12, display: 'flex', flexDirection: 'column', height: '70vh' }}>
+        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+          {/* Completed Q&A stack */}
+          {answers.map(({ q, correct }) => (
+            <div key={q.id} style={{ marginBottom: 12 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                {questions[current].options.map((opt, idx) => (
-                  <Radio key={idx} value={idx}>{opt}</Radio>
-                ))}
+                <Space>
+                  {q.tag && <Tag>{q.tag}</Tag>}
+                  <Text strong>{q.prompt}</Text>
+                </Space>
+                <Divider style={{ margin: '8px 0' }} />
+                <Alert
+                  showIcon
+                  type={correct ? 'success' : 'error'}
+                  message={
+                    <Space>
+                      {correct ? <CheckCircleTwoTone twoToneColor="#52c41a" /> : <CloseCircleTwoTone twoToneColor="#ff4d4f" />}
+                      {correct ? 'Correct' : 'Not quite'}
+                    </Space>
+                  }
+                  description={q.explanation}
+                />
               </Space>
-            </Radio.Group>
+            </div>
+          ))}
 
-            <Space style={{ justifyContent: 'flex-end', width: '100%' }}>
-              <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
-            </Space>
-          </Space>
-        </Card>
-      ) : (
-        <Card>
-          {(() => {
-            const pct = Math.round((correctCount / questions.length) * 100)
-            return (
-              <Result
-                status={pct >= 70 ? 'success' : 'warning'}
-                title={pct >= 70 ? 'Great job!' : 'Nice effort!'}
-                subTitle={`You answered ${correctCount} of ${questions.length} correctly (${pct}%).`}
-                extra={<Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>}
-              />
-            )
-          })()}
-        </Card>
-      )}
+          {/* Current question (or summary) at the bottom of the scroll area */}
+          {current < questions.length ? (
+            <div>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Space>
+                  {questions[current].tag && <Tag>{questions[current].tag}</Tag>}
+                  <Text strong>{questions[current].prompt}</Text>
+                </Space>
+                <Radio.Group onChange={(e) => setSelected(e.target.value)} value={selected} style={{ width: '100%' }}>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {questions[current].options.map((opt, idx) => (
+                      <Radio key={idx} value={idx}>{opt}</Radio>
+                    ))}
+                  </Space>
+                </Radio.Group>
+              </Space>
+            </div>
+          ) : (
+            <div>
+              {(() => {
+                const pct = Math.round((correctCount / questions.length) * 100)
+                return (
+                  <Result
+                    status={pct >= 70 ? 'success' : 'warning'}
+                    title={pct >= 70 ? 'Great job!' : 'Nice effort!'}
+                    subTitle={`You answered ${correctCount} of ${questions.length} correctly (${pct}%).`}
+                    extra={<Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>}
+                  />
+                )
+              })()}
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        {/* Fixed footer with the action button so location doesn't change */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+          {current < questions.length ? (
+            <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
+          ) : (
+            <Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>
+          )}
+        </div>
+      </Card>
     </Space>
   )
 }

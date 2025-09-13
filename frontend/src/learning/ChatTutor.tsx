@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEventHandler } from 'react'
-import { Card, Input, Button, List, Avatar, Typography, Space, Tag, Select, Switch, Tooltip } from 'antd'
+import { Card, Input, Button, List, Avatar, Typography, Space, Tag, Select, Tooltip } from 'antd'
 import { SendOutlined, RobotOutlined, UserOutlined, CopyOutlined, ReloadOutlined, DeleteOutlined, ReadOutlined, BulbOutlined, QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons'
 import { message as antdMessage } from 'antd'
 import { MarkdownRenderer } from './MarkdownRenderer'
@@ -46,7 +46,6 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
   const [isLoading, setIsLoading] = useState(false)
   const [mode, setMode] = useState<'explain' | 'examples' | 'steps' | 'quiz'>('explain')
   const [detail, setDetail] = useState<'concise' | 'normal' | 'deep'>('normal')
-  const [useContext, setUseContext] = useState(true)
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
   }, [messages])
 
   const findContextSnippet = (query: string) => {
-    if (!useContext || !lessonContent) return ''
+    if (!lessonContent) return ''
     const lc = (lessonContent || '').replace(/\n+/g, ' ').trim()
     const sentences = lc.split(/(?<=[.!?])\s+/)
     const q = query.toLowerCase()
@@ -192,9 +191,6 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
       }
       extra={
         <Space>
-          <Tooltip title="Use lesson context">
-            <Switch checked={useContext} onChange={setUseContext} />
-          </Tooltip>
           <Tooltip title="Response mode">
             <Select
               size="small"
@@ -227,7 +223,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
           </Tooltip>
         </Space>
       }
-      bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', height: 420 }}
+      bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', height: '70vh' }}
     >
       {/* Quick actions */}
       <Space wrap style={{ marginBottom: 8 }}>
