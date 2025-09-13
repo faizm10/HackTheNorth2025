@@ -9,11 +9,13 @@ import { StudyGuideGenerator } from "./study-guide-generator"
 import { PrerequisitesTracker } from "./prerequisites-tracker"
 import { XPProgressSystem } from "./xp-progress-system"
 import { StudySession } from "./study-session"
+import { HealthCheck } from "./health-check"
 import { Button } from "@/components/ui/button"
 import { Upload, Brain, Target, Zap, GraduationCap, TrendingUp, FileText, CheckCircle } from "lucide-react"
 
 export function LearningDashboard() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [extractedText, setExtractedText] = useState<string>("")
   const [studyContent, setStudyContent] = useState<{
     text: string
     topic: string
@@ -23,6 +25,18 @@ export function LearningDashboard() {
 
   const handleFilesChange = (files: File[]) => {
     setUploadedFiles(files)
+  }
+
+  const handleTextExtracted = (combinedText: string, extractionResults: any[]) => {
+    setExtractedText(combinedText)
+    // Auto-generate study content from extracted text
+    if (combinedText.length > 100) {
+      setStudyContent({
+        text: combinedText,
+        topic: "Uploaded Content",
+        difficulty: "intermediate"
+      })
+    }
   }
 
   const handleTextChange = (text: string, topic: string, difficulty: string) => {
@@ -197,6 +211,8 @@ export function LearningDashboard() {
               </div>
 
               <div className="space-y-6">
+                <HealthCheck />
+                
                 <Card className="border border-gray-200 shadow-sm">
                   <CardHeader>
                     <CardTitle className="text-lg">Today's Lessons</CardTitle>
@@ -291,7 +307,11 @@ export function LearningDashboard() {
                           <p className="text-sm text-gray-600">PDFs, docs, or images</p>
                         </div>
                       </div>
-                      <FileUpload onFilesChange={handleFilesChange} />
+                      <FileUpload 
+                        onFilesChange={handleFilesChange} 
+                        onTextExtracted={handleTextExtracted}
+                        autoExtract={false}
+                      />
                     </div>
 
                     <div className="space-y-4">
@@ -343,13 +363,30 @@ export function LearningDashboard() {
                 </CardContent>
               </Card>
 
-              {(studyContent || uploadedFiles.length > 0) && (
+              {uploadedFiles.length > 0 && extractedText.length < 100 && !studyContent && (
+                <div className="max-w-2xl mx-auto">
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="p-6 text-center">
+                      <div className="space-y-3">
+                        <div className="text-blue-800 font-medium">
+                          Files uploaded successfully! 
+                        </div>
+                        <div className="text-blue-600 text-sm">
+                          Click the green "Extract Text" button above to extract text from your files, then you can generate a study guide.
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {(studyContent || (uploadedFiles.length > 0 && extractedText.length > 100)) && (
                 <div className="max-w-2xl mx-auto">
                   <StudyGuideGenerator
                     topic={studyContent?.topic || "Uploaded Content"}
                     difficulty={studyContent?.difficulty || "intermediate"}
                     files={uploadedFiles}
-                    textContent={studyContent?.text || ""}
+                    textContent={studyContent?.text || extractedText}
                   />
                 </div>
               )}

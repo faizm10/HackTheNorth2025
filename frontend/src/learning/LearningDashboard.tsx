@@ -4,6 +4,7 @@ import { UploadOutlined, BulbOutlined, AimOutlined, BookOutlined, CheckCircleOut
 import { FileUpload } from './FileUpload'
 import { TextInputArea } from './TextInputArea'
 import { StudyGuideGenerator } from './StudyGuideGenerator'
+import { HealthCheck } from './HealthCheck'
 // Prerequisites tab removed
 // XP features removed
 import { StudySession } from './StudySession'
@@ -14,10 +15,10 @@ const { Title, Text } = Typography
 
 export function LearningDashboard() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
+  const [extractedText, setExtractedText] = useState<string>("")
   const [studyContent, setStudyContent] = useState<{ text: string; topic: string; difficulty: string } | null>(null)
   const [activeStudySession, setActiveStudySession] = useState<StudyGuide | null>(null)
-
-  const activeStudyGuides: StudyGuide[] = [
+  const [activeStudyGuides, setActiveStudyGuides] = useState<StudyGuide[]>([
     {
       id: 1,
       title: 'LINEAR ALGEBRA I',
@@ -28,24 +29,57 @@ export function LearningDashboard() {
         { name: 'Linear Transformations', topics: 13, mastery: 45 },
         { name: 'Eigenvalues & Eigenvectors', topics: 11, mastery: 20 },
         { name: 'Vector Spaces', topics: 7, mastery: 15 },
-        { name: 'Inner Product Spaces', topics: 17, mastery: 60 },
-        { name: 'Orthogonality', topics: 14, mastery: 40 },
-        { name: 'Applications', topics: 22, mastery: 70 },
       ],
     },
     {
       id: 2,
       title: 'CALCULUS II',
-      overallMastery: 78,
+      overallMastery: 45,
       units: [
-        { name: 'Integration Techniques', topics: 32, mastery: 90 },
-        { name: 'Applications of Integration', topics: 18, mastery: 85 },
-        { name: 'Sequences and Series', topics: 25, mastery: 65 },
-        { name: 'Parametric Equations', topics: 12, mastery: 70 },
-        { name: 'Polar Coordinates', topics: 15, mastery: 60 },
+        { name: 'Integration Techniques', topics: 18, mastery: 60 },
+        { name: 'Applications of Integration', topics: 15, mastery: 40 },
+        { name: 'Sequences and Series', topics: 22, mastery: 35 },
+        { name: 'Parametric Equations', topics: 8, mastery: 25 },
       ],
     },
-  ]
+  ])
+
+  const handleFilesChange = (files: File[]) => {
+    setUploadedFiles(files)
+  }
+
+  const handleTextExtracted = (combinedText: string) => {
+    setExtractedText(combinedText)
+    // Auto-generate study content from extracted text
+    if (combinedText.length > 100) {
+      setStudyContent({
+        text: combinedText,
+        topic: "Uploaded Content",
+        difficulty: "intermediate"
+      })
+    }
+  }
+
+  const handleTextChange = (text: string, topic: string, difficulty: string) => {
+    setStudyContent({ text, topic, difficulty })
+  }
+
+  const handleStudyGuideGenerated = (topic: string, sections: any[]) => {
+    // Create a new study guide from the generated sections
+    const newStudyGuide: StudyGuide = {
+      id: Date.now(), // Use timestamp as unique ID
+      title: topic.toUpperCase(),
+      overallMastery: 0, // Start with 0% mastery
+      units: sections.map((section) => ({
+        name: section.title,
+        topics: Math.max(1, Math.floor(section.content.length / 100)), // Estimate topics based on content length
+        mastery: 0, // Start with 0% mastery
+      })),
+    }
+
+    // Replace the first study guide with the new one
+    setActiveStudyGuides(prev => [newStudyGuide, ...prev.slice(1)])
+  }
 
   const todaysLessons = [
     { type: 'Lesson', title: 'Vector Addition and Scalar Multiplication', progress: 50, icon: <BookOutlined /> },
@@ -54,9 +88,6 @@ export function LearningDashboard() {
     { type: 'Lesson', title: 'Matrix Multiplication Properties', progress: 0, icon: <BookOutlined /> },
     { type: 'Review', title: 'Linear Independence', progress: 0, icon: <RiseOutlined /> },
   ]
-
-  const handleFilesChange = (files: File[]) => setUploadedFiles(files)
-  const handleTextChange = (text: string, topic: string, difficulty: string) => setStudyContent({ text, topic, difficulty })
 
   const masteryStroke = (m: number) => {
     if (m >= 80) return '#52c41a'
@@ -120,6 +151,8 @@ export function LearningDashboard() {
                   ))}
                 </div>
                 <div style={{ display: 'grid', gap: 16 }}>
+                  <HealthCheck />
+                  
                   <Card>
                     <Title level={5} style={{ marginBottom: 12 }}>Today's Lessons</Title>
                     <List
@@ -199,7 +232,11 @@ export function LearningDashboard() {
                             <Text type="secondary">PDFs, docs, or images</Text>
                           </div>
                         </Space>
-                        <FileUpload onFilesChange={handleFilesChange} />
+                        <FileUpload 
+                          onFilesChange={handleFilesChange} 
+                          onTextExtracted={handleTextExtracted}
+                          autoExtract={false}
+                        />
                       </Space>
                     </Card>
                   </Col>
@@ -219,13 +256,29 @@ export function LearningDashboard() {
                   </Col>
                 </Row>
 
-                {(studyContent || uploadedFiles.length > 0) && (
+                {uploadedFiles.length > 0 && extractedText.length < 100 && !studyContent && (
+                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                    <Card style={{ borderColor: '#1890ff', backgroundColor: '#f6ffed' }}>
+                      <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                        <div style={{ color: '#1890ff', fontWeight: 600, marginBottom: 8 }}>
+                          Files uploaded successfully! 
+                        </div>
+                        <div style={{ color: '#1890ff', fontSize: 14 }}>
+                          Click the green "Extract Text" button above to extract text from your files, then you can generate a study guide.
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                {(studyContent || (uploadedFiles.length > 0 && extractedText.length > 100)) && (
                   <div style={{ maxWidth: 720, margin: '0 auto' }}>
                     <StudyGuideGenerator
                       topic={studyContent?.topic || 'Uploaded Content'}
                       difficulty={studyContent?.difficulty || 'intermediate'}
                       files={uploadedFiles}
-                      textContent={studyContent?.text || ''}
+                      textContent={studyContent?.text || extractedText}
+                      onStudyGuideGenerated={handleStudyGuideGenerated}
                     />
                   </div>
                 )}
