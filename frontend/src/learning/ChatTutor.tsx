@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEventHandler } from 'react'
-import { Card, Input, Button, List, Avatar, Typography, Space, Tag } from 'antd'
-import { SendOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons'
+import { Card, Input, Button, List, Avatar, Typography, Space, Tag, Select, Switch, Tooltip } from 'antd'
+import { SendOutlined, RobotOutlined, UserOutlined, CopyOutlined, ReloadOutlined, DeleteOutlined, ReadOutlined, BulbOutlined, QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons'
+import { message as antdMessage } from 'antd'
 
 const { TextArea } = Input
 const { Text } = Typography
@@ -29,11 +30,24 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
   ])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [mode, setMode] = useState<'explain' | 'examples' | 'steps' | 'quiz'>('explain')
+  const [detail, setDetail] = useState<'concise' | 'normal' | 'deep'>('normal')
+  const [useContext, setUseContext] = useState(true)
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const findContextSnippet = (query: string) => {
+    if (!useContext || !lessonContent) return ''
+    const lc = (lessonContent || '').replace(/\n+/g, ' ').trim()
+    const sentences = lc.split(/(?<=[.!?])\s+/)
+    const q = query.toLowerCase()
+    const keywords = Array.from(new Set(q.split(/[^a-z0-9]+/).filter(Boolean))).slice(0, 6)
+    const match = sentences.find((s) => keywords.some((k) => s.toLowerCase().includes(k))) || sentences[0]
+    return (match || '').slice(0, 240)
+  }
 
   const generateTutorResponse = (text: string) => {
     const lower = text.toLowerCase()
@@ -47,9 +61,31 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
     if (lower.includes('example')) {
       return 'Example: (3,4) + (1,2) = (4,6). The magnitude of (3,4) is 5.'
     }
+    // Mode- and detail-aware response template
+    const detailBlurb =
+      detail === 'concise'
+        ? 'In short: '
+        : detail === 'deep'
+        ? 'Let’s go deeper: '
+        : ''
 
-    const snippet = (lessonContent || '').trim().slice(0, 160)
-    return `Great question! Here's a concise explanation grounded in our current lesson. ${snippet ? `Context: "${snippet}${lessonContent.length > 160 ? '…' : ''}"` : ''} Would you like an example or a step-by-step walkthrough?`
+    const base =
+      mode === 'explain'
+        ? `${detailBlurb}Here’s an explanation focusing on the core idea and common pitfalls.`
+        : mode === 'examples'
+        ? `${detailBlurb}Let’s look at a few examples that connect directly to this concept.`
+        : mode === 'steps'
+        ? `${detailBlurb}Here is a step-by-step approach you can follow.`
+        : `${detailBlurb}I’ll quiz you with a quick question to check understanding.`
+
+    const ctx = findContextSnippet(text)
+    const ctxLine = ctx ? `\n\nLesson context: "${ctx}${ctx.length >= 240 ? '…' : ''}"` : ''
+    const followUp =
+      mode === 'quiz'
+        ? '\n\nYour turn: Try answering, and I\'ll give hints if you\'d like.'
+        : '\n\nWould you like an example, a visual intuition, or a practice problem next?'
+
+    return `${base}${ctxLine}${followUp}`
   }
 
   const handleSend = () => {
@@ -86,11 +122,56 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
   }
 
   const suggestions = [
-    'Can you give me an example?',
-    'Why is this important?',
-    'How do I calculate this?',
-    "I'm confused about this step",
+    'Summarize the key idea',
+    'Give me an analogy',
+    'Step-by-step solution',
+    'Create a quick practice problem',
+    'Quiz me on this',
   ]
+
+  const regenerateLast = () => {
+    const lastUser = [...messages].reverse().find((m) => m.type === 'user')
+    if (!lastUser) return
+    setIsLoading(true)
+    setTimeout(() => {
+      const tutorMsg: ChatMessage = {
+        id: String(Date.now() + 1),
+        type: 'tutor',
+        content: generateTutorResponse(lastUser.content),
+        timestamp: new Date(),
+      }
+      // Replace last tutor message or append
+      setMessages((prev) => {
+        const idx = [...prev].reverse().findIndex((m) => m.type === 'tutor')
+        if (idx === -1) return [...prev, tutorMsg]
+        const realIdx = prev.length - 1 - idx
+        const next = prev.slice()
+        next[realIdx] = tutorMsg
+        return next
+      })
+      setIsLoading(false)
+    }, 900)
+  }
+
+  const resetChat = () => {
+    setMessages([
+      {
+        id: 'welcome',
+        type: 'tutor',
+        content: `New chat for "${currentTopic}". What would you like to focus on?`,
+        timestamp: new Date(),
+      },
+    ])
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      antdMessage.success('Copied to clipboard')
+    } catch {
+      antdMessage.error('Copy failed')
+    }
+  }
 
   return (
     <Card
@@ -101,13 +182,63 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
           <Tag color="blue">{currentTopic}</Tag>
         </Space>
       }
-      bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', height: 360 }}
+      extra={
+        <Space>
+          <Tooltip title="Use lesson context">
+            <Switch checked={useContext} onChange={setUseContext} />
+          </Tooltip>
+          <Tooltip title="Response mode">
+            <Select
+              size="small"
+              style={{ width: 130 }}
+              value={mode}
+              onChange={(v) => setMode(v)}
+              options={[
+                { value: 'explain', label: (<span><ReadOutlined /> Explain</span>) },
+                { value: 'examples', label: (<span><BulbOutlined /> Examples</span>) },
+                { value: 'steps', label: (<span><SettingOutlined /> Steps</span>) },
+                { value: 'quiz', label: (<span><QuestionCircleOutlined /> Quiz</span>) },
+              ]}
+            />
+          </Tooltip>
+          <Tooltip title="Detail level">
+            <Select
+              size="small"
+              style={{ width: 110 }}
+              value={detail}
+              onChange={(v) => setDetail(v)}
+              options={[
+                { value: 'concise', label: 'Concise' },
+                { value: 'normal', label: 'Normal' },
+                { value: 'deep', label: 'Deep' },
+              ]}
+            />
+          </Tooltip>
+          <Tooltip title="Reset chat">
+            <Button icon={<DeleteOutlined />} onClick={resetChat} size="small" />
+          </Tooltip>
+        </Space>
+      }
+      bodyStyle={{ padding: 16, display: 'flex', flexDirection: 'column', height: 420 }}
     >
+      {/* Quick actions */}
+      <Space wrap style={{ marginBottom: 8 }}>
+        {suggestions.map((q) => (
+          <Button key={q} size="small" onClick={() => setInputValue(q)}>
+            {q}
+          </Button>
+        ))}
+      </Space>
+
       <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
         <List
           dataSource={messages}
           renderItem={(m) => (
-            <List.Item style={{ padding: '8px 0' }}>
+            <List.Item style={{ padding: '8px 0' }}
+              actions={[
+                <Tooltip title="Copy" key="copy"><Button type="text" size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(m.content)} /></Tooltip>,
+              ]}
+            >
               <List.Item.Meta
                 avatar={
                   <Avatar
@@ -132,16 +263,7 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
         <div ref={endRef} />
       </div>
 
-      {messages.length <= 2 && (
-        <Space wrap style={{ margin: '8px 0' }}>
-          {suggestions.map((q) => (
-            <Button key={q} size="small" onClick={() => setInputValue(q)}>
-              {q}
-            </Button>
-          ))}
-        </Space>
-      )}
-
+      {/* Input Area */}
       <Space.Compact style={{ width: '100%' }}>
         <TextArea
           autoSize={{ minRows: 1, maxRows: 3 }}
@@ -150,6 +272,9 @@ export function ChatTutor({ currentTopic, lessonContent }: ChatTutorProps) {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={onKeyDown}
         />
+        <Button icon={<ReloadOutlined />} onClick={regenerateLast} disabled={isLoading || messages.filter(m => m.type==='user').length===0}>
+          Regenerate
+        </Button>
         <Button type="primary" icon={<SendOutlined />} onClick={handleSend} disabled={!inputValue.trim() || isLoading}>
           Send
         </Button>

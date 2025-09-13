@@ -6,7 +6,6 @@ import {
   BookOutlined,
   AimOutlined,
   ClockCircleOutlined,
-  BulbOutlined,
   CheckCircleOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons'
@@ -241,27 +240,9 @@ export function StudySession({
 
             <Paragraph style={{ fontSize: 16 }}>{currentLessonData.content}</Paragraph>
 
-            {currentLessonData.keyPoints && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5} style={{ marginBottom: 8 }}><AimOutlined /> Key Learning Points</Title>
-                <ul>
-                  {currentLessonData.keyPoints.map((p) => (
-                    <li key={p} style={{ marginBottom: 6 }}>
-                      <Text>{p}</Text>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {/* Key Learning Points hidden per request */}
 
-            {currentLessonData.examples && (
-              <div style={{ marginTop: 16 }}>
-                <Title level={5} style={{ marginBottom: 8 }}><BulbOutlined /> Examples & Applications</Title>
-                <Card size="small" style={{ background: '#fffbe6' }}>
-                  <Text style={{ whiteSpace: 'pre-wrap' }}>{currentLessonData.examples}</Text>
-                </Card>
-              </div>
-            )}
+            {/* Examples & Applications hidden per request */}
 
             <Alert
               showIcon
