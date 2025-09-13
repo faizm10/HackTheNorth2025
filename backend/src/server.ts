@@ -7,6 +7,7 @@ import helloRoutes from "./api/routes/helloRoutes.js";
 import agentRoutes from "./api/routes/agentRoutes.js";
 import gradingRoutes from "./api/routes/gradingRoutes.js";
 import { getSupabase } from "./services/supabaseClient.js";
+import { generateMockData } from "./mockData/generator.js";
 
 dotenv.config();
 
@@ -165,6 +166,42 @@ app.get("/api/results/:id?", async (req, res) => {
     console.error("Get results error:", e);
     const message = e?.message || "Internal server error";
     return res.status(500).json({ error: "Internal server error", message });
+  }
+});
+
+// Mock data endpoint for Databricks-style analytics
+app.get('/api/mock-data', (req, res) => {
+  try {
+    const data = generateMockData();
+    res.json({
+      success: true,
+      data,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Mock data generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate mock data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// Detailed user endpoint
+app.get('/api/detailed-user', (req, res) => {
+  try {
+    const data = generateMockData();
+    res.json({
+      success: true,
+      data: data.detailedUser,
+      generated_at: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Detailed user generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate detailed user data',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
