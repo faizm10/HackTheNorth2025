@@ -4,7 +4,6 @@ import { UploadOutlined, BulbOutlined, BookOutlined, RocketOutlined, FileTextOut
 import { FileUpload } from './FileUpload'
 import { TextInputArea } from './TextInputArea'
 import { StudyGuideGenerator } from './StudyGuideGenerator'
-import { HealthCheck } from './HealthCheck'
 // Prerequisites tab removed
 // XP features removed
 import { StudySession } from './StudySession'
@@ -182,7 +181,7 @@ export function LearningDashboard() {
                   ))}
                 </div>
                 <div style={{ display: 'grid', gap: 16 }}>
-                  <HealthCheck />
+                  {/* <HealthCheck /> System status widget commented out per request */}
                   
                   <Card>
                     <Title level={5} style={{ marginBottom: 12 }}>Today's Lessons</Title>

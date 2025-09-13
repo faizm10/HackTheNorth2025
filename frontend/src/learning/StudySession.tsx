@@ -240,17 +240,19 @@ export function StudySession({
                       cursor: unlocked ? 'pointer' : 'not-allowed',
                       background: active ? '#e6f7ff' : undefined,
                       opacity: unlocked ? 1 : 0.6,
-                      display: 'flex',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 24px',
+                      columnGap: 8,
                       alignItems: 'center',
-                      justifyContent: 'space-between',
+                      minHeight: 28,
                       marginBottom: 4,
                     }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                       {typeIcon(lesson.type)}
                       <Text style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lesson.title}</Text>
                     </span>
-                    <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {completed ? (
                         <CheckCircleOutlined style={{ color: '#52c41a' }} />
                       ) : !unlocked ? (
