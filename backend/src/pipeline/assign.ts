@@ -1,4 +1,4 @@
-import { GeminiClient } from '../llm/gemini.js';
+import { getLlmClient } from '../llm/provider.js';
 import { assignChunkPrompt } from '../prompts.js';
 import { Assignment, Chunk, ModulesResult } from '../types.js';
 
@@ -6,7 +6,7 @@ export async function runAssignments(
   chunks: Chunk[], 
   modules: ModulesResult
 ): Promise<Assignment[]> {
-  const client = new GeminiClient();
+  const client = getLlmClient();
   const modulesJson = JSON.stringify(modules, null, 2);
   const assignments: Assignment[] = [];
   
