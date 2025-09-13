@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Layout, Card, Typography, Progress, Button, Tag, Divider } from 'antd'
+import { Layout, Card, Typography, Progress, Button, Divider } from 'antd'
 import {
   LeftOutlined,
   RightOutlined,
   BookOutlined,
   AimOutlined,
-  ClockCircleOutlined,
   CheckCircleOutlined,
+  LockOutlined,
 } from '@ant-design/icons'
 import { ChatTutor } from './ChatTutor'
 import type { CourseUnit } from './types'
@@ -24,6 +24,8 @@ export function StudySession({
 }) {
   const [currentUnit, setCurrentUnit] = useState(0)
   const [currentLesson, setCurrentLesson] = useState(0)
+  const [completedLinear, setCompletedLinear] = useState(-1) // highest completed linear index
+  const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
 
   const courseStructure: CourseUnit[] = [
     {
@@ -134,11 +136,23 @@ export function StudySession({
   const currentUnitData = courseStructure[currentUnit]
   const currentLessonData = currentUnitData.lessons[currentLesson]
 
+  const toLinearIndex = (unitIdx: number, lessonIdx: number) =>
+    courseStructure.slice(0, unitIdx).reduce((s, u) => s + u.lessons.length, 0) + lessonIdx
+
   const totalLessons = courseStructure.reduce((sum, u) => sum + u.lessons.length, 0)
-  const currentIndex = courseStructure.slice(0, currentUnit).reduce((s, u) => s + u.lessons.length, 0) + currentLesson
+  const currentIndex = toLinearIndex(currentUnit, currentLesson)
   const progressPct = ((currentIndex + 1) / totalLessons) * 100
 
+  const canContinue = completedQuizzes.has(currentIndex)
+
   const nextLesson = () => {
+    // Block continuing if assessment not passed
+    if (!canContinue) return
+    // Mark current as completed
+    const currLi = toLinearIndex(currentUnit, currentLesson)
+    setCompletedLinear((prev) => Math.max(prev, currLi))
+
+    // Navigate to next
     if (currentLesson < currentUnitData.lessons.length - 1) {
       setCurrentLesson((c) => c + 1)
     } else if (currentUnit < courseStructure.length - 1) {
@@ -156,18 +170,7 @@ export function StudySession({
     }
   }
 
-  const difficultyColor = (d?: string) => {
-    switch (d) {
-      case 'beginner':
-        return 'green'
-      case 'intermediate':
-        return 'orange'
-      case 'advanced':
-        return 'red'
-      default:
-        return 'default'
-    }
-  }
+  // Difficulty chip removed per design
 
   const typeIcon = (t: string) => {
     if (t === 'Assessment') return <CheckCircleOutlined />
@@ -193,15 +196,24 @@ export function StudySession({
             <div style={{ marginTop: 8 }}>
               {unit.lessons.map((lesson, lessonIndex) => {
                 const active = unitIndex === currentUnit && lessonIndex === currentLesson
+                const li = toLinearIndex(unitIndex, lessonIndex)
+                const completed = li <= completedLinear
+                const unlocked = li <= completedLinear + 1
                 return (
                   <div
                     key={lesson.title}
-                    onClick={() => { setCurrentUnit(unitIndex); setCurrentLesson(lessonIndex) }}
+                    onClick={() => {
+                      if (unlocked) {
+                        setCurrentUnit(unitIndex)
+                        setCurrentLesson(lessonIndex)
+                      }
+                    }}
                     style={{
                       padding: '6px 8px',
                       borderRadius: 6,
-                      cursor: 'pointer',
+                      cursor: unlocked ? 'pointer' : 'not-allowed',
                       background: active ? '#e6f7ff' : undefined,
+                      opacity: unlocked ? 1 : 0.6,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
@@ -211,6 +223,13 @@ export function StudySession({
                     <span style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
                       {typeIcon(lesson.type)}
                       <Text style={{ fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lesson.title}</Text>
+                    </span>
+                    <span style={{ width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {completed ? (
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                      ) : !unlocked ? (
+                        <LockOutlined style={{ color: '#999' }} />
+                      ) : null}
                     </span>
                   </div>
                 )
@@ -229,18 +248,14 @@ export function StudySession({
                 {typeIcon(currentLessonData.type)}
                 <Text type="secondary">{currentLessonData.type}</Text>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Tag color={difficultyColor(currentLessonData.difficulty)}>{currentLessonData.difficulty}</Tag>
-              </div>
+              <div />
             </div>
             <Title level={4} style={{ margin: '4px 0 0' }}>{currentLessonData.title}</Title>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
               <Button size="small" onClick={prevLesson} disabled={currentUnit === 0 && currentLesson === 0} icon={<LeftOutlined />}>Previous</Button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#999' }}>
-                <ClockCircleOutlined /> <Text type="secondary" style={{ fontSize: 12 }}>Estimated 15–20 min</Text>
-              </div>
-              <Button size="small" type="primary" onClick={nextLesson} icon={<RightOutlined />}>
+              <div />
+              <Button size="small" type="primary" onClick={nextLesson} icon={<RightOutlined />} disabled={!canContinue}>
                 {currentUnit === courseStructure.length - 1 && currentLesson === currentUnitData.lessons.length - 1 ? 'Complete' : 'Continue'}
               </Button>
             </div>
@@ -258,9 +273,19 @@ export function StudySession({
             </div>
             <div style={{ minHeight: 0 }}>
               <QuizPanel
+                key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
                 topic={guide.title}
                 lessonTitle={currentLessonData.title}
                 content={currentLessonData.content}
+                onComplete={({ correct, total }) => {
+                  if (correct === total) {
+                    setCompletedQuizzes((prev) => {
+                      const next = new Set(prev)
+                      next.add(currentIndex)
+                      return next
+                    })
+                  }
+                }}
               />
             </div>
           </div>

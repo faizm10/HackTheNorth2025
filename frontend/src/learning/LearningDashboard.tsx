@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Tabs, Layout, Card, Typography, Button, Progress, Row, Col, Space, List } from 'antd'
-import { UploadOutlined, BulbOutlined, AimOutlined, BookOutlined, CheckCircleOutlined, RocketOutlined, RiseOutlined, FileTextOutlined } from '@ant-design/icons'
+import { UploadOutlined, BulbOutlined, AimOutlined, BookOutlined, CheckCircleOutlined, RocketOutlined, RiseOutlined, FileTextOutlined, RightOutlined } from '@ant-design/icons'
 import { FileUpload } from './FileUpload'
 import { TextInputArea } from './TextInputArea'
 import { StudyGuideGenerator } from './StudyGuideGenerator'
-import { PrerequisitesTracker } from './PrerequisitesTracker'
+// Prerequisites tab removed
 // XP features removed
 import { StudySession } from './StudySession'
 import type { StudyGuide } from './types'
@@ -100,7 +100,7 @@ export function LearningDashboard() {
                     <Card key={guide.id}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Title level={5} style={{ color: '#1677ff', margin: 0 }}>{guide.title}</Title>
-                        <Button size="small" onClick={() => setActiveStudySession(guide)}>Continue</Button>
+                        <Button type="primary" size="middle" icon={<RightOutlined />} onClick={() => setActiveStudySession(guide)}>Continue</Button>
                       </div>
                       <Text type="secondary">
                         John has demonstrated mastery of <b>{guide.overallMastery}%</b> of {guide.title}.
@@ -267,15 +267,7 @@ export function LearningDashboard() {
               </div>
             ),
           },
-          {
-            key: 'prerequisites',
-            label: (
-              <Space>
-                <AimOutlined /> Prerequisites
-              </Space>
-            ),
-            children: <PrerequisitesTracker topic="Calculus" />,
-          },
+          // Prerequisites tab removed
           // Progress tab removed
         ]} />
       </Content>

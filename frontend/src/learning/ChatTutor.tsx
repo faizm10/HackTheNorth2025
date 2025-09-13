@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEventHandler } from 'react'
 import { Card, Input, Button, List, Avatar, Typography, Space, Tag, Select, Tooltip } from 'antd'
-import { SendOutlined, RobotOutlined, UserOutlined, CopyOutlined, ReloadOutlined, DeleteOutlined, ReadOutlined, BulbOutlined, QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons'
+import { SendOutlined, RobotOutlined, UserOutlined, CopyOutlined, ReloadOutlined, ReadOutlined, BulbOutlined, QuestionCircleOutlined, SettingOutlined } from '@ant-design/icons'
 import { message as antdMessage } from 'antd'
 import { MarkdownRenderer } from './MarkdownRenderer'
 
@@ -160,16 +160,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
     }, 900)
   }
 
-  const resetChat = () => {
-    setMessages([
-      {
-        id: 'welcome',
-        type: 'tutor',
-        content: `New chat for "${currentTopic}". What would you like to focus on?`,
-        timestamp: new Date(),
-      },
-    ])
-  }
+  // Reset chat removed per design
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -217,9 +208,6 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
                 { value: 'deep', label: 'Deep' },
               ]}
             />
-          </Tooltip>
-          <Tooltip title="Reset chat">
-            <Button icon={<DeleteOutlined />} onClick={resetChat} size="small" />
           </Tooltip>
         </Space>
       }

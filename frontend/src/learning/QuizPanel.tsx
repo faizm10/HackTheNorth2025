@@ -13,7 +13,7 @@ export interface QuizQuestion {
   tag?: string
 }
 
-export function QuizPanel({ topic, lessonTitle, content }: { topic: string; lessonTitle: string; content: string }) {
+export function QuizPanel({ topic, lessonTitle, content, onComplete }: { topic: string; lessonTitle: string; content: string; onComplete?: (r: { passed: boolean; correct: number; total: number; percent: number }) => void }) {
   const questions: QuizQuestion[] = useMemo(() => {
     // Simple heuristic to craft questions from topic/content
     const base = topic || lessonTitle || 'This lesson'
@@ -68,6 +68,7 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
   const progress = Math.round(((current) / questions.length) * 100)
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  const [reported, setReported] = useState(false)
 
   const submit = () => {
     const q = questions[current]
@@ -83,29 +84,43 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
     setCurrent(0)
     setSelected(null)
     setAnswers([])
+    setReported(false)
   }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [answers, current])
 
-  return (
-    <Space direction="vertical" style={{ width: '100%' }} size={12}>
-      <Card>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space>
-            <QuestionCircleOutlined />
-            <Text strong>Knowledge Check</Text>
-          </Space>
-          <Text type="secondary">{Math.min(current + 1, questions.length)}/{questions.length}</Text>
-        </Space>
-        <div style={{ marginTop: 8 }}>
-          <Progress percent={progress} size="small" />
-        </div>
-      </Card>
+  // Report completion once when quiz ends
+  useEffect(() => {
+    if (!onComplete) return
+    const done = current >= questions.length
+    if (done && !reported) {
+      const total = questions.length
+      const correct = correctCount
+      const percent = Math.round((correct / total) * 100)
+      const passed = percent >= 70
+      onComplete({ passed, correct, total, percent })
+      setReported(true)
+    }
+  }, [current, questions.length, correctCount, onComplete, reported])
 
-      <Card bodyStyle={{ padding: 12, display: 'flex', flexDirection: 'column', height: '70vh' }}>
-        <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+  return (
+    <Card
+      title={(
+        <Space>
+          <QuestionCircleOutlined />
+          <Text strong>Knowledge Check</Text>
+        </Space>
+      )}
+      extra={<Text type="secondary">{Math.min(current + 1, questions.length)}/{questions.length}</Text>}
+      bodyStyle={{ padding: 12, display: 'flex', flexDirection: 'column', height: '70vh' }}
+    >
+      <div style={{ marginBottom: 8 }}>
+        <Progress percent={progress} size="small" />
+      </div>
+
+      <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
           {/* Completed Q&A stack */}
           {answers.map(({ q, correct }) => (
             <div key={q.id} style={{ marginBottom: 12 }}>
@@ -162,18 +177,17 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
               })()}
             </div>
           )}
-          <div ref={endRef} />
-        </div>
+        <div ref={endRef} />
+      </div>
 
-        {/* Fixed footer with the action button so location doesn't change */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-          {current < questions.length ? (
-            <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
-          ) : (
-            <Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>
-          )}
-        </div>
-      </Card>
-    </Space>
+      {/* Fixed footer with the action button so location doesn't change */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+        {current < questions.length ? (
+          <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
+        ) : (
+          <Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>
+        )}
+      </div>
+    </Card>
   )
 }
