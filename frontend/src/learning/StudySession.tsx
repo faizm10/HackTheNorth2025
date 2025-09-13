@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Layout, Card, Typography, Progress, Button, Divider } from 'antd'
 import {
   LeftOutlined,
@@ -10,7 +10,6 @@ import {
 } from '@ant-design/icons'
 import { ChatTutor } from './ChatTutor'
 import type { CourseUnit, StudyGuide } from './types'
-import { QuizPanel } from './QuizPanel'
 
 const { Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -18,14 +17,15 @@ const { Title, Text } = Typography
 export function StudySession({
   guide,
   onBack,
+  onProgress,
 }: {
   guide: StudyGuide
   onBack: () => void
+  onProgress?: (guideId: number, data: { unitIndex: number; lessonIndex: number; currentIndex: number; totalLessons: number; lessonTitle: string }) => void
 }) {
   const [currentUnit, setCurrentUnit] = useState(0)
   const [currentLesson, setCurrentLesson] = useState(0)
   const [completedLinear, setCompletedLinear] = useState(-1) // highest completed linear index
-  const [completedQuizzes, setCompletedQuizzes] = useState<Set<number>>(new Set())
 
   const courseStructure: CourseUnit[] = guide.sections && guide.sections.length > 0
     ? [
@@ -155,7 +155,8 @@ export function StudySession({
   const currentIndex = toLinearIndex(currentUnit, currentLesson)
   const progressPct = ((currentIndex + 1) / totalLessons) * 100
 
-  const canContinue = completedQuizzes.has(currentIndex)
+  // Quiz is disabled in current design; allow linear continue
+  const canContinue = true
 
   const nextLesson = () => {
     // Block continuing if assessment not passed
@@ -189,6 +190,19 @@ export function StudySession({
     if (t === 'Lesson') return <BookOutlined />
     return <AimOutlined />
   }
+
+  // Report progress upward whenever unit/lesson changes
+  useEffect(() => {
+    if (!onProgress) return
+    onProgress(guide.id, {
+      unitIndex: currentUnit,
+      lessonIndex: currentLesson,
+      currentIndex,
+      totalLessons,
+      lessonTitle: currentLessonData.title,
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUnit, currentLesson, totalLessons])
 
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>

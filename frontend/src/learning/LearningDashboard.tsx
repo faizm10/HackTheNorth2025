@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Tabs, Layout, Card, Typography, Button, Progress, Row, Col, Space, List } from 'antd'
-import { UploadOutlined, BulbOutlined, AimOutlined, BookOutlined, CheckCircleOutlined, RocketOutlined, RiseOutlined, FileTextOutlined, RightOutlined } from '@ant-design/icons'
+import { UploadOutlined, BulbOutlined, BookOutlined, RocketOutlined, FileTextOutlined, RightOutlined } from '@ant-design/icons'
 import { FileUpload } from './FileUpload'
 import { TextInputArea } from './TextInputArea'
 import { StudyGuideGenerator } from './StudyGuideGenerator'
@@ -21,6 +21,7 @@ export function LearningDashboard() {
   const [generatorStartKey, setGeneratorStartKey] = useState<number>(0)
   const [generationSuccess, setGenerationSuccess] = useState<boolean>(false)
   const [generationLoading, setGenerationLoading] = useState<boolean>(false)
+  const [guideProgress, setGuideProgress] = useState<Record<number, { lessonTitle: string; currentIndex: number; totalLessons: number }>>({})
   const [activeStudyGuides, setActiveStudyGuides] = useState<StudyGuide[]>([
     {
       id: 1,
@@ -32,17 +33,6 @@ export function LearningDashboard() {
         { name: 'Linear Transformations', topics: 13, mastery: 45 },
         { name: 'Eigenvalues & Eigenvectors', topics: 11, mastery: 20 },
         { name: 'Vector Spaces', topics: 7, mastery: 15 },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Calculus II',
-      overallMastery: 45,
-      units: [
-        { name: 'Integration Techniques', topics: 18, mastery: 60 },
-        { name: 'Applications of Integration', topics: 15, mastery: 40 },
-        { name: 'Sequences and Series', topics: 22, mastery: 35 },
-        { name: 'Parametric Equations', topics: 8, mastery: 25 },
       ],
     },
   ])
@@ -98,13 +88,22 @@ export function LearningDashboard() {
     setGenerationSuccess(true)
   }
 
-  const todaysLessons = [
-    { type: 'Lesson', title: 'Vector Addition and Scalar Multiplication', progress: 50, icon: <BookOutlined /> },
-    { type: 'Assessment', title: 'Quiz 1', progress: 0, icon: <CheckCircleOutlined /> },
-    { type: 'Multistep', title: 'Solving Systems of Linear Equations', progress: 0, icon: <AimOutlined /> },
-    { type: 'Lesson', title: 'Matrix Multiplication Properties', progress: 0, icon: <BookOutlined /> },
-    { type: 'Review', title: 'Linear Independence', progress: 0, icon: <RiseOutlined /> },
-  ]
+  const todaysLessons = activeStudyGuides.map((guide) => {
+    const progress = guideProgress[guide.id]
+    const lessonTitle = progress?.lessonTitle
+      || guide.sections?.[0]?.title
+      || guide.units?.[0]?.name
+      || 'Current Lesson'
+    const percent = progress && progress.totalLessons > 0
+      ? Math.round(((progress.currentIndex + 1) / progress.totalLessons) * 100)
+      : 0
+    return {
+      type: guide.title,
+      title: lessonTitle,
+      progress: percent,
+      icon: <BookOutlined />,
+    }
+  })
 
   const masteryStroke = (m: number) => {
     if (m >= 80) return '#52c41a'
@@ -114,7 +113,22 @@ export function LearningDashboard() {
   }
 
   if (activeStudySession) {
-    return <StudySession guide={activeStudySession} onBack={() => setActiveStudySession(null)} />
+    return (
+      <StudySession
+        guide={activeStudySession}
+        onBack={() => setActiveStudySession(null)}
+        onProgress={(guideId, data) =>
+          setGuideProgress((prev) => ({
+            ...prev,
+            [guideId]: {
+              lessonTitle: data.lessonTitle,
+              currentIndex: data.currentIndex,
+              totalLessons: data.totalLessons,
+            },
+          }))
+        }
+      />
+    )
   }
 
   return (
@@ -191,39 +205,6 @@ export function LearningDashboard() {
                         </List.Item>
                       )}
                     />
-                  </Card>
-
-                  <Card>
-                    <Title level={5} style={{ marginBottom: 12, color: '#1677ff' }}>FOUNDATIONAL KNOWLEDGE</Title>
-                    <Text type="secondary">John is missing <b>9 foundational topics</b> from Prealgebra.</Text>
-                    <br />
-                    <Text type="secondary">These topics will be remediated as John progresses through the Algebra I course.</Text>
-                    <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-                      <div>
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Functions and Graphing</div>
-                        <div style={{ display: 'grid', gap: 4, fontSize: 12, color: '#666' }}>
-                          <div>1. Understanding Proportional Relationships Using Graphs</div>
-                          <div>2. Understanding Proportional Relationships Using Tables</div>
-                          <div>3. Understanding Proportional Relationships From Descriptions</div>
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Numbers and Representation</div>
-                        <div style={{ display: 'grid', gap: 4, fontSize: 12, color: '#666' }}>
-                          <div>1. Working With Equivalent Ratios</div>
-                          <div>2. More on Equivalent Ratios</div>
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, marginBottom: 6 }}>Arithmetic</div>
-                        <div style={{ display: 'grid', gap: 4, fontSize: 12, color: '#666' }}>
-                          <div>1. Adding and Subtracting Radicals</div>
-                          <div>2. Finding Lowest Common Multiples Using Prime Factorization</div>
-                          <div>3. The Power of Quotient Rule for Exponents</div>
-                          <div>4. Combining the Rules of Exponents</div>
-                        </div>
-                      </div>
-                    </div>
                   </Card>
                 </div>
               </div>
