@@ -1,0 +1,35 @@
+{
+  "version": "0.1",
+  "defaults": { 
+    "temperature": 0.2, 
+    "max_tokens": 800, 
+    "retries": 1, 
+    "timeout_ms": 20000 
+  },
+  "routes": {
+    "knowledge_check": { 
+      "preferred": ["google/gemini-2.5-flash"], 
+      "fallbacks": ["openai/gpt-4.1-nano:cheap", "cohere/command-r-08-2024"] 
+    },
+    "syllabus_map": { 
+      "preferred": ["google/gemini-2.5-pro"], 
+      "fallbacks": ["openai/gpt-4.1"] 
+    },
+    "overview": { 
+      "preferred": ["anthropic/claude-3-5-sonnet-20240620"], 
+      "fallbacks": ["openai/gpt-4.1", "google/gemini-2.5-pro"] 
+    },
+    "diagram_mermaid": { 
+      "preferred": ["martian/code"], 
+      "fallbacks": ["mistralai/devstral-small"] 
+    },
+    "diagram_repair": { 
+      "preferred": ["martian/code"], 
+      "fallbacks": ["mistralai/devstral-small"] 
+    },
+    "quiz_mcq": { 
+      "preferred": ["cohere/command-r-08-2024"], 
+      "fallbacks": ["openai/gpt-4.1-nano:cheap", "google/gemini-2.5-flash"] 
+    }
+  }
+}
