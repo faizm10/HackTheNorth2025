@@ -50,7 +50,7 @@ export function TextInputArea({ onTextChange, generationLoading }: { onTextChang
         />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
+      {/* <div style={{ marginBottom: 16 }}>
         <Text strong>Difficulty Level</Text>
         <div style={{ marginTop: 8 }}>
           <Space>
@@ -69,7 +69,7 @@ export function TextInputArea({ onTextChange, generationLoading }: { onTextChang
             ))}
           </Space>
         </div>
-      </div>
+      </div> */}
 
 
       <Button type="primary" block disabled={!text.trim() && !topic.trim()} onClick={handleSubmit} loading={generationLoading}>

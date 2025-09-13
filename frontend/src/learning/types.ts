@@ -9,6 +9,7 @@ export interface StudyGuide {
   title: string
   overallMastery: number
   units: LearningUnit[]
+  sections?: StudyGuideSection[]
 }
 
 export interface Lesson {
@@ -34,4 +35,11 @@ export interface Prerequisite {
   difficulty: 'beginner' | 'intermediate' | 'advanced'
   estimatedTime: number
   dependsOn: string[]
+}
+
+export interface StudyGuideSection {
+  id: string
+  title: string
+  content: string
+  prerequisites?: string[]
 }

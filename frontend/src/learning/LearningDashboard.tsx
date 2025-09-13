@@ -24,7 +24,7 @@ export function LearningDashboard() {
   const [activeStudyGuides, setActiveStudyGuides] = useState<StudyGuide[]>([
     {
       id: 1,
-      title: 'LINEAR ALGEBRA I',
+      title: 'Linear Algebra I',
       overallMastery: 62,
       units: [
         { name: 'Vector Operations', topics: 24, mastery: 85 },
@@ -36,7 +36,7 @@ export function LearningDashboard() {
     },
     {
       id: 2,
-      title: 'CALCULUS II',
+      title: 'Calculus II',
       overallMastery: 45,
       units: [
         { name: 'Integration Techniques', topics: 18, mastery: 60 },
@@ -58,7 +58,7 @@ export function LearningDashboard() {
     if (combinedText.length > 100) {
       setStudyContent({
         text: combinedText,
-        topic: "Uploaded Content",
+        topic: "",
         difficulty: "intermediate"
       })
     }
@@ -72,14 +72,24 @@ export function LearningDashboard() {
 
   const handleStudyGuideGenerated = (topic: string, sections: any[]) => {
     // Create a new study guide from the generated sections
+    const rawTopic = (studyContent?.topic || topic || '').trim()
+    const isPlaceholder = rawTopic.length === 0 || rawTopic.toUpperCase() === 'UPLOADED CONTENT'
+    const firstSectionTitle = (sections && sections[0] && sections[0].title) ? String(sections[0].title) : 'Study Guide'
+    const derivedTitle = (isPlaceholder ? firstSectionTitle : rawTopic)
     const newStudyGuide: StudyGuide = {
       id: Date.now(), // Use timestamp as unique ID
-      title: topic.toUpperCase(),
+      title: derivedTitle,
       overallMastery: 0, // Start with 0% mastery
       units: sections.map((section) => ({
         name: section.title,
         topics: Math.max(1, Math.floor(section.content.length / 100)), // Estimate topics based on content length
         mastery: 0, // Start with 0% mastery
+      })),
+      sections: sections.map((s: any) => ({
+        id: String(s.id || s.title || Math.random()),
+        title: s.title,
+        content: s.content || '',
+        prerequisites: s.prerequisites || [],
       })),
     }
 
