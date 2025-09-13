@@ -116,7 +116,8 @@ export function LearningDashboard() {
       <StudySession
         guide={activeStudySession}
         onBack={() => setActiveStudySession(null)}
-        onProgress={(guideId, data) =>
+        onProgress={(guideId, data) => {
+          // Track current lesson details for Today's Lessons
           setGuideProgress((prev) => ({
             ...prev,
             [guideId]: {
@@ -125,7 +126,30 @@ export function LearningDashboard() {
               totalLessons: data.totalLessons,
             },
           }))
-        }
+
+          // Reflect completion back on the home page cards
+          const completedCount = Math.max(0, data.currentIndex) // lessons completed before the current one
+          const percent = data.totalLessons > 0 ? Math.round((completedCount / data.totalLessons) * 100) : 0
+          setActiveStudyGuides((prev) => prev.map((g) => {
+            if (g.id !== guideId) return g
+            let updatedUnits = g.units
+            // If this guide originated from generated sections, units likely map 1:1 with lessons
+            if ((g as any).sections && Array.isArray((g as any).sections)) {
+              const total = data.totalLessons
+              if (Array.isArray(g.units) && g.units.length === total) {
+                updatedUnits = g.units.map((u, i) => ({
+                  ...u,
+                  mastery: i < completedCount ? 100 : (i === completedCount ? 25 : 0),
+                }))
+              }
+            }
+            return {
+              ...g,
+              overallMastery: percent,
+              units: updatedUnits,
+            }
+          }))
+        }}
       />
     )
   }
@@ -158,7 +182,7 @@ export function LearningDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
                 <div style={{ display: 'grid', gap: 16 }}>
                   {activeStudyGuides.map((guide) => (
-                    <Card key={guide.id}>
+                    <Card key={guide.id} style={{ minHeight: activeStudyGuides.length === 1 ? 360 : undefined }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Title level={5} style={{ color: '#1677ff', margin: 0 }}>{guide.title}</Title>
                         <Button type="primary" size="middle" icon={<RightOutlined />} onClick={() => setActiveStudySession(guide)}>Continue</Button>
@@ -197,9 +221,6 @@ export function LearningDashboard() {
                                 <Text type="secondary" style={{ fontSize: 12 }}>{lesson.title}</Text>
                               </div>
                             </Space>
-                            <div style={{ textAlign: 'right' }}>
-                              {lesson.progress > 0 && <Text type="secondary" style={{ fontSize: 12 }}>{lesson.progress}%</Text>}
-                            </div>
                           </div>
                         </List.Item>
                       )}
