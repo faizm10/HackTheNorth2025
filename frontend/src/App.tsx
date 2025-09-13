@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { Modal, Form, Upload, Input, Button, message } from 'antd'
-import { UploadOutlined, FileTextOutlined } from '@ant-design/icons'
+import { FileTextOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadProps } from 'antd'
+import { Button, Form, Input, message, Modal, Upload } from 'antd'
+import { useState } from 'react'
 import './App.css'
 
 const { TextArea } = Input
