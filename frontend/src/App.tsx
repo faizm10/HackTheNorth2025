@@ -269,7 +269,7 @@ Before applying machine learning algorithms, data must be preprocessed. This inc
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
