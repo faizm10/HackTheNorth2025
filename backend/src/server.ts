@@ -5,6 +5,8 @@ import { processText } from "./services/textProcessor.js";
 import { exit } from "process";
 import helloRoutes from "./api/routes/helloRoutes.js";
 import agentRoutes from "./api/routes/agentRoutes.js";
+import gradingRoutes from "./api/routes/gradingRoutes.js";
+import { getSupabase } from "./services/supabaseClient.js";
 
 dotenv.config();
 
@@ -18,6 +20,7 @@ app.use(express.json({ limit: "10mb" }));
 // Migrated API routes
 app.use("/api/hello", helloRoutes);
 app.use("/api/agent", agentRoutes);
+app.use("/api/grading", gradingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -67,42 +70,50 @@ app.post("/api/process", async (req, res) => {
 });
 
 // Store processed result to Supabase
-app.post('/api/results', async (req, res) => {
+app.post("/api/results", async (req, res) => {
   try {
     const { id, success, data, metadata } = req.body || {};
 
     // Allow client-provided id or generate one
-    const recordId = typeof id === 'string' && id.trim().length > 0 ? id : `res_${Date.now()}`;
+    const recordId =
+      typeof id === "string" && id.trim().length > 0 ? id : `res_${Date.now()}`;
 
-    if (typeof success !== 'boolean' || !data || !metadata) {
-      return res.status(400).json({ error: 'Invalid body: require success:boolean, data:object, metadata:object' });
+    if (typeof success !== "boolean" || !data || !metadata) {
+      return res.status(400).json({
+        error:
+          "Invalid body: require success:boolean, data:object, metadata:object",
+      });
     }
 
     let supabase;
     try {
       supabase = getSupabase();
     } catch (cfgErr: any) {
-      return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+      return res
+        .status(500)
+        .json({ error: "Supabase not configured", message: cfgErr?.message });
     }
     const { error } = await supabase
-      .from('processed_results')
+      .from("processed_results")
       .insert([{ id: recordId, success, data, metadata }]);
 
     if (error) {
-      console.error('Supabase insert error:', error);
-      return res.status(500).json({ error: 'Failed to store result', details: error.message });
+      console.error("Supabase insert error:", error);
+      return res
+        .status(500)
+        .json({ error: "Failed to store result", details: error.message });
     }
 
     return res.json({ success: true, id: recordId });
   } catch (e: any) {
-    console.error('Store results error:', e);
-    const message = e?.message || 'Internal server error';
-    return res.status(500).json({ error: 'Internal server error', message });
+    console.error("Store results error:", e);
+    const message = e?.message || "Internal server error";
+    return res.status(500).json({ error: "Internal server error", message });
   }
 });
 
 // Retrieve processed result(s) from Supabase
-app.get('/api/results/:id?', async (req, res) => {
+app.get("/api/results/:id?", async (req, res) => {
   try {
     const { id } = req.params;
     if (id) {
@@ -110,17 +121,22 @@ app.get('/api/results/:id?', async (req, res) => {
       try {
         supabase = getSupabase();
       } catch (cfgErr: any) {
-        return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+        return res
+          .status(500)
+          .json({ error: "Supabase not configured", message: cfgErr?.message });
       }
       const { data, error } = await supabase
-        .from('processed_results')
-        .select('*')
-        .eq('id', id)
+        .from("processed_results")
+        .select("*")
+        .eq("id", id)
         .single();
       if (error) {
-        if (error.code === 'PGRST116') return res.status(404).json({ error: 'Not found' });
-        console.error('Supabase fetch by id error:', error);
-        return res.status(500).json({ error: 'Failed to fetch result', details: error.message });
+        if (error.code === "PGRST116")
+          return res.status(404).json({ error: "Not found" });
+        console.error("Supabase fetch by id error:", error);
+        return res
+          .status(500)
+          .json({ error: "Failed to fetch result", details: error.message });
       }
       return res.json({ success: true, data });
     } else {
@@ -128,23 +144,27 @@ app.get('/api/results/:id?', async (req, res) => {
       try {
         supabase = getSupabase();
       } catch (cfgErr: any) {
-        return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+        return res
+          .status(500)
+          .json({ error: "Supabase not configured", message: cfgErr?.message });
       }
       const { data, error } = await supabase
-        .from('processed_results')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("processed_results")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(50);
       if (error) {
-        console.error('Supabase list error:', error);
-        return res.status(500).json({ error: 'Failed to list results', details: error.message });
+        console.error("Supabase list error:", error);
+        return res
+          .status(500)
+          .json({ error: "Failed to list results", details: error.message });
       }
       return res.json({ success: true, data });
     }
   } catch (e: any) {
-    console.error('Get results error:', e);
-    const message = e?.message || 'Internal server error';
-    return res.status(500).json({ error: 'Internal server error', message });
+    console.error("Get results error:", e);
+    const message = e?.message || "Internal server error";
+    return res.status(500).json({ error: "Internal server error", message });
   }
 });
 

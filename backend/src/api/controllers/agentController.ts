@@ -5,6 +5,7 @@ import {
 } from "./llmAPI.js";
 import { Request, Response } from "express";
 import { ChatCompletionMessageParam } from "openai/resources";
+import { answerGrading } from "./gradingController.js";
 
 type ChatRole = "system" | "user" | "assistant";
 type ChatMessage = { role: ChatRole; content: string };
@@ -256,5 +257,60 @@ export const generateShortAnswer = async (
     throw new Error(
       "Short answer response was not valid JSON: " + generatedMessage
     );
+  }
+};
+
+export const gradeSubmission = async (req: Request, res: Response) => {
+  try {
+    const {
+      question,
+      answer,
+      messages = [],
+    } = req.body as {
+      question: string;
+      answer: string;
+      messages?: ChatMessage[];
+    };
+
+    if (!question || !answer) {
+      return res.status(400).json({
+        error: "Invalid request: question and answer are required",
+      });
+    }
+
+    // Call the grading controller to get the grading result
+    const gradingResult = await answerGrading(question, answer);
+
+    // Add the grading result as a system message to the conversation
+    const messagesWithGrading: ChatMessage[] = [
+      ...messages,
+      {
+        role: "system",
+        content: `Grading Result: ${
+          gradingResult.choices?.[0]?.message?.content || gradingResult
+        }`,
+      },
+    ];
+
+    // Get the LLM's response based on the grading
+    const llmResponse = await getLLMResponse(messagesWithGrading, {
+      mode: "TEACH",
+      model: MODEL,
+    });
+
+    res.json({
+      success: true,
+      grading: gradingResult.choices?.[0]?.message?.content || gradingResult,
+      response: llmResponse,
+    });
+  } catch (error: any) {
+    if (error?.status) {
+      return res
+        .status(error.status)
+        .json({ error: error.message || "Grading API error" });
+    }
+    res
+      .status(500)
+      .json({ error: "Internal server error while grading submission" });
   }
 };
