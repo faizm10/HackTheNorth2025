@@ -22,3 +22,14 @@ export interface ModulesResult {
 export interface AssignmentsResult {
   assignments: Assignment[];
 }
+
+export interface Requirement {
+  id: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+}
+
+export interface RequirementsResult {
+  requirements: Requirement[];
+}
