@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Typography, Space, Progress, Radio, Button, Result, Tag, Alert } from 'antd'
+import { Card, Typography, Space, Progress, Radio, Button, Result, Tag, Alert, Divider } from 'antd'
 import { QuestionCircleOutlined, CheckCircleTwoTone, CloseCircleTwoTone, RedoOutlined } from '@ant-design/icons'
 
 const { Text } = Typography
@@ -63,44 +63,24 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
 
   const [current, setCurrent] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [showFeedback, setShowFeedback] = useState<null | boolean>(null)
-
-  const q = questions[current]
+  const [answers, setAnswers] = useState<Array<{ q: QuizQuestion; selected: number; correct: boolean }>>([])
+  const correctCount = answers.filter((a) => a.correct).length
   const progress = Math.round(((current) / questions.length) * 100)
 
   const submit = () => {
-    if (selected === null) return
+    const q = questions[current]
+    if (!q || selected === null) return
     const isCorrect = selected === q.answerIndex
-    setShowFeedback(isCorrect)
-    if (isCorrect) setCorrectCount((c) => c + 1)
-  }
-
-  const next = () => {
-    setShowFeedback(null)
+    setAnswers((prev) => [...prev, { q, selected, correct: isCorrect }])
     setSelected(null)
     if (current < questions.length - 1) setCurrent((c) => c + 1)
+    else setCurrent((c) => c + 1) // move past last to show summary
   }
 
   const restart = () => {
     setCurrent(0)
     setSelected(null)
-    setCorrectCount(0)
-    setShowFeedback(null)
-  }
-
-  if (current >= questions.length) {
-    const pct = Math.round((correctCount / questions.length) * 100)
-    return (
-      <Card>
-        <Result
-          status={pct >= 70 ? 'success' : 'warning'}
-          title={pct >= 70 ? 'Great job!' : 'Nice effort!'}
-          subTitle={`You answered ${correctCount} of ${questions.length} correctly (${pct}%).`}
-          extra={<Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>}
-        />
-      </Card>
-    )
+    setAnswers([])
   }
 
   return (
@@ -111,58 +91,74 @@ export function QuizPanel({ topic, lessonTitle, content }: { topic: string; less
             <QuestionCircleOutlined />
             <Text strong>Knowledge Check</Text>
           </Space>
-          <Text type="secondary">{current + 1}/{questions.length}</Text>
+          <Text type="secondary">{Math.min(current + 1, questions.length)}/{questions.length}</Text>
         </Space>
         <div style={{ marginTop: 8 }}>
           <Progress percent={progress} size="small" />
         </div>
       </Card>
 
-      <Card>
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Space>
-            {q.tag && <Tag>{q.tag}</Tag>}
-            <Text strong>{q.prompt}</Text>
-          </Space>
-
-          <Radio.Group onChange={(e) => setSelected(e.target.value)} value={selected} style={{ width: '100%' }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              {q.options.map((opt, idx) => (
-                <Radio key={idx} value={idx}>{opt}</Radio>
-              ))}
+      {/* Completed Q&A stack */}
+      {answers.map(({ q, selected, correct }) => (
+        <Card key={q.id}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              {q.tag && <Tag>{q.tag}</Tag>}
+              <Text strong>{q.prompt}</Text>
             </Space>
-          </Radio.Group>
-
-          {showFeedback !== null && (
-            <div>
-              {showFeedback ? (
-                <Alert
-                  showIcon
-                  type="success"
-                  message={<Space><CheckCircleTwoTone twoToneColor="#52c41a" /> Correct</Space>}
-                  description={q.explanation}
-                />
-              ) : (
-                <Alert
-                  showIcon
-                  type="error"
-                  message={<Space><CloseCircleTwoTone twoToneColor="#ff4d4f" /> Not quite</Space>}
-                  description={q.explanation}
-                />
-              )}
-            </div>
-          )}
-
-          <Space style={{ justifyContent: 'space-between', width: '100%' }}>
-            <div />
-            {showFeedback === null ? (
-              <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
-            ) : (
-              <Button type="primary" onClick={next}>Next</Button>
-            )}
+            <Divider style={{ margin: '8px 0' }} />
+            <Alert
+              showIcon
+              type={correct ? 'success' : 'error'}
+              message={
+                <Space>
+                  {correct ? <CheckCircleTwoTone twoToneColor="#52c41a" /> : <CloseCircleTwoTone twoToneColor="#ff4d4f" />}
+                  {correct ? 'Correct' : 'Not quite'}
+                </Space>
+              }
+              description={q.explanation}
+            />
           </Space>
-        </Space>
-      </Card>
+        </Card>
+      ))}
+
+      {/* Current question (if any) */}
+      {current < questions.length ? (
+        <Card>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              {questions[current].tag && <Tag>{questions[current].tag}</Tag>}
+              <Text strong>{questions[current].prompt}</Text>
+            </Space>
+
+            <Radio.Group onChange={(e) => setSelected(e.target.value)} value={selected} style={{ width: '100%' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {questions[current].options.map((opt, idx) => (
+                  <Radio key={idx} value={idx}>{opt}</Radio>
+                ))}
+              </Space>
+            </Radio.Group>
+
+            <Space style={{ justifyContent: 'flex-end', width: '100%' }}>
+              <Button type="primary" onClick={submit} disabled={selected === null}>Submit</Button>
+            </Space>
+          </Space>
+        </Card>
+      ) : (
+        <Card>
+          {(() => {
+            const pct = Math.round((correctCount / questions.length) * 100)
+            return (
+              <Result
+                status={pct >= 70 ? 'success' : 'warning'}
+                title={pct >= 70 ? 'Great job!' : 'Nice effort!'}
+                subTitle={`You answered ${correctCount} of ${questions.length} correctly (${pct}%).`}
+                extra={<Button onClick={restart} icon={<RedoOutlined />}>Retry Quiz</Button>}
+              />
+            )
+          })()}
+        </Card>
+      )}
     </Space>
   )
 }

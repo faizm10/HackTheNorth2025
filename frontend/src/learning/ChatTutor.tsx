@@ -135,13 +135,7 @@ export function ChatTutor({ currentTopic, lessonContent, initialLessonText }: Ch
     }
   }
 
-  const suggestions = [
-    'Summarize the key idea',
-    'Give me an analogy',
-    'Step-by-step solution',
-    'Create a quick practice problem',
-    'Quiz me on this',
-  ]
+  const suggestions = ['Summarize', 'Analogy', 'Steps', 'Practice', 'Quiz']
 
   const regenerateLast = () => {
     const lastUser = [...messages].reverse().find((m) => m.type === 'user')

@@ -221,10 +221,10 @@ export function StudySession({
       </Sider>
 
       <Content style={{ padding: 24, display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto 1fr', gap: 16 }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateRows: 'auto 1fr', gap: 12 }}>
           {/* Header Card */}
-          <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Card bodyStyle={{ padding: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {typeIcon(currentLessonData.type)}
                 <Text type="secondary">{currentLessonData.type}</Text>
@@ -233,21 +233,21 @@ export function StudySession({
                 <Tag color={difficultyColor(currentLessonData.difficulty)}>{currentLessonData.difficulty}</Tag>
               </div>
             </div>
-            <Title level={3} style={{ marginTop: 8 }}>{currentLessonData.title}</Title>
+            <Title level={4} style={{ margin: '4px 0 0' }}>{currentLessonData.title}</Title>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-              <Button onClick={prevLesson} disabled={currentUnit === 0 && currentLesson === 0} icon={<LeftOutlined />}>Previous</Button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+              <Button size="small" onClick={prevLesson} disabled={currentUnit === 0 && currentLesson === 0} icon={<LeftOutlined />}>Previous</Button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#999' }}>
-                <ClockCircleOutlined /> <Text type="secondary">Estimated time: 15-20 minutes</Text>
+                <ClockCircleOutlined /> <Text type="secondary" style={{ fontSize: 12 }}>Estimated 15–20 min</Text>
               </div>
-              <Button type="primary" onClick={nextLesson} icon={<RightOutlined />}>
+              <Button size="small" type="primary" onClick={nextLesson} icon={<RightOutlined />}>
                 {currentUnit === courseStructure.length - 1 && currentLesson === currentUnitData.lessons.length - 1 ? 'Complete' : 'Continue'}
               </Button>
             </div>
           </Card>
 
           {/* Two-column main area: left chat, right quiz */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'stretch', minHeight: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16, alignItems: 'stretch', minHeight: 0 }}>
             <div style={{ minHeight: 0 }}>
               <ChatTutor
                 key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
