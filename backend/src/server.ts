@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { processText } from './services/textProcessor.js';
 import { exit } from 'process';
+import { getSupabase } from './services/supabaseClient.js';
 
 dotenv.config();
 
@@ -58,6 +59,88 @@ app.post('/api/process', async (req, res) => {
       error: 'Internal server error during text processing',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+// Store processed result to Supabase
+app.post('/api/results', async (req, res) => {
+  try {
+    const { id, success, data, metadata } = req.body || {};
+
+    // Allow client-provided id or generate one
+    const recordId = typeof id === 'string' && id.trim().length > 0 ? id : `res_${Date.now()}`;
+
+    if (typeof success !== 'boolean' || !data || !metadata) {
+      return res.status(400).json({ error: 'Invalid body: require success:boolean, data:object, metadata:object' });
+    }
+
+    let supabase;
+    try {
+      supabase = getSupabase();
+    } catch (cfgErr: any) {
+      return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+    }
+    const { error } = await supabase
+      .from('processed_results')
+      .insert([{ id: recordId, success, data, metadata }]);
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return res.status(500).json({ error: 'Failed to store result', details: error.message });
+    }
+
+    return res.json({ success: true, id: recordId });
+  } catch (e: any) {
+    console.error('Store results error:', e);
+    const message = e?.message || 'Internal server error';
+    return res.status(500).json({ error: 'Internal server error', message });
+  }
+});
+
+// Retrieve processed result(s) from Supabase
+app.get('/api/results/:id?', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id) {
+      let supabase;
+      try {
+        supabase = getSupabase();
+      } catch (cfgErr: any) {
+        return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+      }
+      const { data, error } = await supabase
+        .from('processed_results')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) {
+        if (error.code === 'PGRST116') return res.status(404).json({ error: 'Not found' });
+        console.error('Supabase fetch by id error:', error);
+        return res.status(500).json({ error: 'Failed to fetch result', details: error.message });
+      }
+      return res.json({ success: true, data });
+    } else {
+      let supabase;
+      try {
+        supabase = getSupabase();
+      } catch (cfgErr: any) {
+        return res.status(500).json({ error: 'Supabase not configured', message: cfgErr?.message });
+      }
+      const { data, error } = await supabase
+        .from('processed_results')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) {
+        console.error('Supabase list error:', error);
+        return res.status(500).json({ error: 'Failed to list results', details: error.message });
+      }
+      return res.json({ success: true, data });
+    }
+  } catch (e: any) {
+    console.error('Get results error:', e);
+    const message = e?.message || 'Internal server error';
+    return res.status(500).json({ error: 'Internal server error', message });
   }
 });
 

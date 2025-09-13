@@ -198,6 +198,11 @@
         </div>
         
         <div class="form-group">
+            <label for="resultsApiUrl">Results API (Supabase) Endpoint:</label>
+            <input type="text" id="resultsApiUrl" value="http://localhost:3001/api/results" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        
+        <div class="form-group">
             <label for="textInput">Enter your text content:</label>
             <textarea id="textInput" placeholder="Paste your text here to process it into learning modules, chunks, assignments, and requirements...">Machine learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed. The field has revolutionized numerous industries and continues to evolve rapidly.
 
@@ -209,21 +214,28 @@ Before applying machine learning algorithms, data must be preprocessed. This inc
         </div>
         
         <button onclick="processText()" id="processBtn">🔧 Process Text</button>
+        <button onclick="uploadResults()" id="saveBtn" style="margin-left: 10px; background:#28a745;" disabled>💾 Save Results to Supabase</button>
         
         <div id="loading" class="loading" style="display: none;">
             <p>⏳ Processing your text with AI... This may take a few seconds.</p>
+        </div>
+        
+        <div id="saveLoading" class="loading" style="display: none;">
+            <p>☁️ Uploading results to Supabase...</p>
         </div>
         
         <div id="results" class="results" style="display: none;"></div>
     </div>
 
     <script>
+        let __lastProcessed = null;
         async function processText() {
             const textInput = document.getElementById('textInput');
             const apiUrl = document.getElementById('apiUrl');
             const processBtn = document.getElementById('processBtn');
             const loading = document.getElementById('loading');
             const results = document.getElementById('results');
+            const saveBtn = document.getElementById('saveBtn');
             
             const text = textInput.value.trim();
             
@@ -258,8 +270,12 @@ Before applying machine learning algorithms, data must be preprocessed. This inc
                 }
                 
                 displayResults(data);
+                __lastProcessed = data;
+                saveBtn.disabled = false;
                 
             } catch (error) {
+                __lastProcessed = null;
+                document.getElementById('saveBtn').disabled = true;
                 results.innerHTML = `
                     <div class="error">
                         <h3>❌ Error Processing Text</h3>
@@ -271,6 +287,59 @@ Before applying machine learning algorithms, data must be preprocessed. This inc
             } finally {
                 processBtn.disabled = false;
                 loading.style.display = 'none';
+            }
+        }
+        
+        async function uploadResults() {
+            const saveBtn = document.getElementById('saveBtn');
+            const saveLoading = document.getElementById('saveLoading');
+            const resultsApiUrl = document.getElementById('resultsApiUrl');
+            const results = document.getElementById('results');
+            
+            if (!__lastProcessed || !__lastProcessed.success) {
+                alert('No processed results to upload yet. Process text first.');
+                return;
+            }
+            
+            const payload = {
+                success: true,
+                data: __lastProcessed.data,
+                metadata: __lastProcessed.metadata
+            };
+            
+            saveBtn.disabled = true;
+            saveLoading.style.display = 'block';
+            
+            try {
+                const resp = await fetch(resultsApiUrl.value || '/api/results', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const body = await resp.json();
+                if (!resp.ok) {
+                    throw new Error(body.error || `HTTP ${resp.status}`);
+                }
+                const savedId = body.id || '(no id)';
+                const notice = `✅ Saved to Supabase with id: ${savedId}`;
+                const html = results.innerHTML;
+                results.innerHTML = `
+                    <div class="section">
+                        <h3>☁️ Supabase Upload</h3>
+                        <div class="module">${notice}</div>
+                    </div>
+                ` + html;
+            } catch (e) {
+                const html = results.innerHTML;
+                results.innerHTML = `
+                    <div class="section">
+                        <h3>☁️ Supabase Upload</h3>
+                        <div class="error"><strong>Failed:</strong> ${e.message}</div>
+                    </div>
+                ` + html;
+            } finally {
+                saveBtn.disabled = false;
+                saveLoading.style.display = 'none';
             }
         }
         
