@@ -605,12 +605,12 @@ export function ChatTutor({
         <Space size={8}>
           <RobotOutlined style={{ color: "#1890ff" }} />
           <Text strong>AI Tutor</Text>
-          <Tag color="blue">{currentTopic}</Tag>
+          {/* <Tag color="blue">{currentTopic}</Tag> */}
         </Space>
       }
       extra={
         <Space>
-          <Tooltip title="Response mode">
+          {/* <Tooltip title="Response mode">
             <Select
               size="small"
               style={{ width: 130 }}
@@ -664,7 +664,7 @@ export function ChatTutor({
                 { value: "deep", label: "Deep" },
               ]}
             />
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip title="Reset chat">
             <Button
               icon={<DeleteOutlined />}
@@ -678,7 +678,7 @@ export function ChatTutor({
         padding: 16,
         display: "flex",
         flexDirection: "column",
-        height: 420,
+        height: 600,
       }}
     >
       {/* Quick actions */}
@@ -791,44 +791,15 @@ export function ChatTutor({
                     setMessages((prev) => [...prev, tutorMsg]);
                     setActiveQuiz(null);
                     setSelectedQuizOption(null);
-                    // If grading passed, advance to next requirement and fetch new lesson
-                    if (
-                      res.grading?.passed &&
-                      currentRequirementIndex < derivedRequirements.length - 1
-                    ) {
-                      const nextIndex = currentRequirementIndex + 1;
-                      setCurrentRequirementIndex(nextIndex);
-                      const next = await getInitialAgentResponse(
-                        buildInitialMessages(
-                          derivedRequirements[nextIndex] || currentTopic
-                        ),
-                        {
-                          requirements: derivedRequirements,
-                          currentRequirementIndex: nextIndex,
-                          currentModule: moduleName || currentTopic,
-                        }
-                      );
-                      const nextMsg: ChatMessage = {
+                    // If grading passed, show completion message
+                    if (res.grading?.passed) {
+                      const completionMsg: ChatMessage = {
                         id: String(Date.now() + 2),
                         type: "tutor",
-                        content:
-                          (next.message as any).choices?.[0]?.message
-                            ?.content ||
-                          next.message.content ||
-                          "No response received",
+                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
                         timestamp: new Date(),
                       };
-                      setMessages((prev) => [...prev, nextMsg]);
-                      const nextTool = (next.message as any).tool;
-                      if (nextTool && nextTool.type === "quiz") {
-                        setActiveQuiz(nextTool.data as QuizToolData);
-                        setSelectedQuizOption(null);
-                      } else if (nextTool && nextTool.type === "shortAnswer") {
-                        setActiveShortAnswer(
-                          nextTool.data as ShortAnswerToolData
-                        );
-                        setShortAnswerInput("");
-                      }
+                      setMessages((prev) => [...prev, completionMsg]);
                     }
                   } catch (e: any) {
                     const msg = e?.message || "Failed to grade answer";
@@ -913,45 +884,15 @@ export function ChatTutor({
                     setShortAnswerInput("");
                     setShortAnswerSubmitted(false);
 
-                    // If grading passed, advance to next requirement and fetch new lesson
-                    if (
-                      res.grading?.passed &&
-                      currentRequirementIndex < derivedRequirements.length - 1
-                    ) {
-                      const nextIndex = currentRequirementIndex + 1;
-                      setCurrentRequirementIndex(nextIndex);
-                      const next = await getInitialAgentResponse(
-                        buildInitialMessages(
-                          derivedRequirements[nextIndex] || currentTopic
-                        ),
-                        {
-                          requirements: derivedRequirements,
-                          currentRequirementIndex: nextIndex,
-                          currentModule: moduleName || currentTopic,
-                        }
-                      );
-                      const nextMsg: ChatMessage = {
+                    // If grading passed, show completion message
+                    if (res.grading?.passed) {
+                      const completionMsg: ChatMessage = {
                         id: String(Date.now() + 2),
                         type: "tutor",
-                        content:
-                          (next.message as any).choices?.[0]?.message
-                            ?.content ||
-                          next.message.content ||
-                          "No response received",
+                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
                         timestamp: new Date(),
                       };
-                      setMessages((prev) => [...prev, nextMsg]);
-                      const nextTool = (next.message as any).tool;
-                      if (nextTool && nextTool.type === "quiz") {
-                        setActiveQuiz(nextTool.data as QuizToolData);
-                        setSelectedQuizOption(null);
-                      } else if (nextTool && nextTool.type === "shortAnswer") {
-                        setActiveShortAnswer(
-                          nextTool.data as ShortAnswerToolData
-                        );
-                        setShortAnswerInput("");
-                        setShortAnswerSubmitted(false);
-                      }
+                      setMessages((prev) => [...prev, completionMsg]);
                     }
                   } catch (e: any) {
                     const msg = e?.message || "Failed to grade answer";
