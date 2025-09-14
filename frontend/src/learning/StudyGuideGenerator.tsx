@@ -262,7 +262,7 @@ export function StudyGuideGenerator({
     <div style={{ display: 'grid', gap: 16 }} data-difficulty={difficulty}>
       {/* Success banner moved to parent layout; no in-component success banner */}
       
-      <Card>
+      {/* <Card>
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
           <Space>
             <AimOutlined /> <Text strong>Study Progress</Text>
@@ -272,7 +272,7 @@ export function StudyGuideGenerator({
         <div style={{ marginTop: 12 }}>
           <Progress percent={pct} />
         </div>
-      </Card>
+      </Card> */}
 
       <Card>
         <Title level={5}>
@@ -308,7 +308,7 @@ export function StudyGuideGenerator({
                       </div>
                     )}
                   </div>
-                  <div>
+                  {/* <div>
                     <Button
                       type={section.completed ? 'default' : 'primary'}
                       onClick={() => toggle(section.id)}
@@ -317,7 +317,7 @@ export function StudyGuideGenerator({
                     >
                       {section.completed ? 'Complete' : 'Mark Complete'}
                     </Button>
-                  </div>
+                  </div> */}
                 </div>
               </List.Item>
             )
