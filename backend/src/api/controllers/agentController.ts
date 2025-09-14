@@ -284,9 +284,34 @@ export const getInitialResponse = async (req: Request, res: Response) => {
     // Check if no tool was called, and if so, call the quiz tool
     if (!generatedMessage.tool) {
       try {
-        const quizResult = await generateQuiz(messagesWithSystem);
-        context.currentQuestion = { type: "quiz", data: quizResult };
-        const toolData = { type: "quiz", data: quizResult };
+        // Filter out system role messages and add tool selection system prompt
+        const messagesWithoutSystem = messagesWithSystem.filter(
+          (msg) => msg.role !== "system"
+        );
+        const toolSelectionMessages = [
+          {
+            role: "system" as const,
+            content:
+              "Return ONLY 'quiz' if a quiz would best assess the lesson, or ONLY 'shortAnswer' if a short answer would best assess the lesson. DO NOT RETURN ANY OTHER STRING",
+          },
+          ...messagesWithoutSystem,
+        ];
+        const toolToUse = await getLLMCompletion(toolSelectionMessages);
+        const toolChoice = toolToUse.choices?.[0]?.message?.content?.trim();
+
+        let quizResult: any;
+        if (toolChoice === "quiz") {
+          quizResult = await generateQuiz(messagesWithSystem);
+        } else if (toolChoice === "shortAnswer") {
+          quizResult = await generateShortAnswer(messagesWithSystem);
+        } else {
+          // Default to quiz if response is unclear
+          quizResult = await generateQuiz(messagesWithSystem);
+        }
+
+        const toolType = toolChoice === "shortAnswer" ? "shortAnswer" : "quiz";
+        context.currentQuestion = { type: toolType, data: quizResult };
+        const toolData = { type: toolType, data: quizResult };
 
         // Add the quiz tool to the response
         const messageWithQuiz = {

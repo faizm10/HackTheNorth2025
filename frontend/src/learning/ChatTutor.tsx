@@ -121,12 +121,13 @@ export function ChatTutor({
   initialLessonText,
   moduleName,
   requirements: incomingRequirements,
-}: ChatTutorProps) {
+  onModuleComplete,
+}: ChatTutorProps & { onModuleComplete?: () => void }) {
   /**
-   * Chat messages state - initialized with welcome message and optional lesson intro.
+   * Chat messages state - initialized as empty array to prevent List component from showing "no data".
    * Uses lazy initialization to set up initial conversation context.
    */
-  const [messages, setMessages] = useState<ChatMessage[]>(() => []);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   // Linear requirements list and current index
   const derivedRequirements = (() => {
     if (
@@ -268,8 +269,9 @@ export function ChatTutor({
           setShortAnswerInput("");
           setShortAnswerSubmitted(false);
         }
-      } catch (e: any) {
-        const msg = e?.message || "Failed to load initial lesson";
+      } catch (e) {
+        const msg =
+          e instanceof Error ? e.message : "Failed to load initial lesson";
         antdMessage.error(msg);
         appendTutorError(msg);
       } finally {
@@ -517,7 +519,7 @@ export function ChatTutor({
               setShortAnswerInput("");
               setShortAnswerSubmitted(false);
             }
-          } catch (e: any) {
+          } catch (e) {
             antdMessage.error("Failed to load next requirement");
           }
         } else if (!tool.data.passed) {
@@ -552,13 +554,25 @@ export function ChatTutor({
               setShortAnswerInput("");
               setShortAnswerSubmitted(false);
             }
-          } catch (e: any) {
+          } catch (e) {
             antdMessage.error("Failed to load follow-up response");
           }
+        } else {
+          // Passed and this was the last requirement in the module
+          setIsGrading(false);
+          const completionMsg: ChatMessage = {
+            id: String(Date.now() + 3),
+            type: "tutor",
+            content:
+              "✅ Great job! You've completed this module. You can now continue to the next lesson.",
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, completionMsg]);
+          if (typeof onModuleComplete === "function") onModuleComplete();
         }
       }
-    } catch (e: any) {
-      const msg = e?.message || "Failed to get AI response";
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to get AI response";
       antdMessage.error(msg);
       appendTutorError(msg);
     } finally {
@@ -665,14 +679,15 @@ export function ChatTutor({
                 setShortAnswerInput("");
                 setShortAnswerSubmitted(false);
               }
-            } catch (e: any) {
+            } catch (e) {
               antdMessage.error("Failed to load next requirement");
             }
           })();
         }
       }
-    } catch (e: any) {
-      const msg = e?.message || "Failed to regenerate response";
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Failed to regenerate response";
       antdMessage.error(msg);
       appendTutorError(msg);
     } finally {
@@ -720,8 +735,8 @@ export function ChatTutor({
         setActiveShortAnswer(tool.data as ShortAnswerToolData);
         setShortAnswerInput("");
       }
-    } catch (e: any) {
-      const msg = e?.message || "Failed to reset chat";
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to reset chat";
       antdMessage.error(msg);
       appendTutorError(msg);
     } finally {
@@ -847,45 +862,47 @@ export function ChatTutor({
       </Space> */}
 
       <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
-        <List
-          dataSource={messages}
-          renderItem={(m) => (
-            <List.Item
-              style={{ padding: "8px 0" }}
-              actions={[
-                <Tooltip title="Copy" key="copy">
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<CopyOutlined />}
-                    onClick={() => copyToClipboard(m.content)}
-                  />
-                </Tooltip>,
-              ]}
-            >
-              <List.Item.Meta
-                avatar={
-                  <Avatar
-                    icon={
-                      m.type === "user" ? <UserOutlined /> : <RobotOutlined />
-                    }
-                    style={{
-                      background: m.type === "user" ? "#1890ff" : "#52c41a",
-                    }}
-                  />
-                }
-                title={
-                  <Text strong style={{ fontSize: 12 }}>
-                    {m.type === "user" ? "You" : "AI Tutor"}
-                  </Text>
-                }
-                description={
-                  <MarkdownRenderer content={m.content} fontSize={17} />
-                }
-              />
-            </List.Item>
-          )}
-        />
+        {messages && messages.length > 0 && (
+          <List
+            dataSource={messages}
+            renderItem={(m) => (
+              <List.Item
+                style={{ padding: "8px 0" }}
+                actions={[
+                  <Tooltip title="Copy" key="copy">
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CopyOutlined />}
+                      onClick={() => copyToClipboard(m.content)}
+                    />
+                  </Tooltip>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar
+                      icon={
+                        m.type === "user" ? <UserOutlined /> : <RobotOutlined />
+                      }
+                      style={{
+                        background: m.type === "user" ? "#1890ff" : "#52c41a",
+                      }}
+                    />
+                  }
+                  title={
+                    <Text strong style={{ fontSize: 12 }}>
+                      {m.type === "user" ? "You" : "AI Tutor"}
+                    </Text>
+                  }
+                  description={
+                    <MarkdownRenderer content={m.content} fontSize={17} />
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
         {activeQuiz && (
           <div
             style={{
@@ -953,14 +970,21 @@ export function ChatTutor({
                     setActiveQuiz(null);
                     setSelectedQuizOption(null);
                     // If grading passed, show completion message
-                    if (res.grading?.passed) {
+                    if (
+                      res.grading?.passed &&
+                      currentRequirementIndex >= derivedRequirements.length - 1
+                    ) {
                       const completionMsg: ChatMessage = {
                         id: String(Date.now() + 2),
                         type: "tutor",
-                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
+                        content:
+                          "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
                         timestamp: new Date(),
                       };
                       setMessages((prev) => [...prev, completionMsg]);
+                      if (typeof onModuleComplete === "function")
+                        onModuleComplete();
+                    }
 
                     // Handle tool responses for requirement progression
                     const tool = (res.response as any).tool;
@@ -1011,7 +1035,7 @@ export function ChatTutor({
                             setShortAnswerInput("");
                             setShortAnswerSubmitted(false);
                           }
-                        } catch (e: any) {
+                        } catch (e) {
                           antdMessage.error("Failed to load next requirement");
                         }
                       } else if (!tool.data.passed) {
@@ -1052,15 +1076,16 @@ export function ChatTutor({
                             setShortAnswerInput("");
                             setShortAnswerSubmitted(false);
                           }
-                        } catch (e: any) {
+                        } catch (e) {
                           antdMessage.error(
                             "Failed to load follow-up response"
                           );
                         }
                       }
                     }
-                  } catch (e: any) {
-                    const msg = e?.message || "Failed to grade answer";
+                  } catch (e) {
+                    const msg =
+                      e instanceof Error ? e.message : "Failed to grade answer";
                     antdMessage.error(msg);
                     appendTutorError(msg);
                   } finally {
@@ -1069,7 +1094,7 @@ export function ChatTutor({
                   }
                 }}
               >
-                Submit Answer
+                {shortAnswerSubmitted ? "Submitted" : "Submit Answer"}
               </Button>
             </Space>
           </div>
@@ -1149,17 +1174,22 @@ export function ChatTutor({
                     setShortAnswerSubmitted(false);
 
                     // If grading passed, show completion message
-                    if (res.grading?.passed) {
+                    if (
+                      res.grading?.passed &&
+                      currentRequirementIndex >= derivedRequirements.length - 1
+                    ) {
                       const completionMsg: ChatMessage = {
                         id: String(Date.now() + 2),
                         type: "tutor",
-                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
+                        content:
+                          "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
                         timestamp: new Date(),
                       };
                       setMessages((prev) => [...prev, completionMsg]);
                     }
-                  } catch (e: any) {
-                    const msg = e?.message || "Failed to grade answer";
+                  } catch (e) {
+                    const msg =
+                      e instanceof Error ? e.message : "Failed to grade answer";
                     antdMessage.error(msg);
                     appendTutorError(msg);
                     setShortAnswerSubmitted(false); // Allow retry on error

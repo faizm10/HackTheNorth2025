@@ -163,7 +163,8 @@ ${JSON.stringify(
   try {
     const completion = await getLLMCompletion(
       promptMessages,
-      "command-a-reasoning-08-2025"
+      "command-a-reasoning-08-2025",
+      200
     );
     const responseText = completion.choices?.[0]?.message?.content;
 

@@ -11,12 +11,20 @@ const openai = new OpenAI({
 
 export async function getLLMCompletion(
   messages: ChatCompletionMessageParam[],
-  model: string = DEFAULT_MODEL
+  model: string = DEFAULT_MODEL,
+  reasoningBudget?: number
 ): Promise<any> {
-  const completion = await openai.chat.completions.create({
+  const params: any = {
     model,
     messages,
-  });
+  };
+
+  // Add reasoning budget if specified and model supports it
+  if (reasoningBudget && model.includes("reasoning")) {
+    params.reasoning_budget = reasoningBudget;
+  }
+
+  const completion = await openai.chat.completions.create(params);
   return completion;
 }
 
