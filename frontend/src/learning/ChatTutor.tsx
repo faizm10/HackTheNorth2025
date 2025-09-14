@@ -522,41 +522,6 @@ export function ChatTutor({
           } catch (e) {
             antdMessage.error("Failed to load next requirement");
           }
-        } else if (!tool.data.passed) {
-          // Not passed: ask the agent for a follow-up response after feedback
-          setIsGrading(false);
-          try {
-            const afterFeedback = [...combined, tutorMsg];
-            const follow = await sendAgentResponse(
-              toApiMessages(afterFeedback),
-              {
-                requirements: derivedRequirements,
-                currentRequirementIndex,
-                currentModule: moduleName || currentTopic,
-              }
-            );
-            const followMsg: ChatMessage = {
-              id: String(Date.now() + 3),
-              type: "tutor",
-              content:
-                (follow.message as any).choices?.[0]?.message?.content ||
-                follow.message.content ||
-                "No response received",
-              timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, followMsg]);
-            const followTool = (follow.message as any).tool;
-            if (followTool && followTool.type === "quiz") {
-              setActiveQuiz(followTool.data as QuizToolData);
-              setSelectedQuizOption(null);
-            } else if (followTool && followTool.type === "shortAnswer") {
-              setActiveShortAnswer(followTool.data as ShortAnswerToolData);
-              setShortAnswerInput("");
-              setShortAnswerSubmitted(false);
-            }
-          } catch (e) {
-            antdMessage.error("Failed to load follow-up response");
-          }
         } else {
           // Passed and this was the last requirement in the module
           setIsGrading(false);
@@ -1038,49 +1003,6 @@ export function ChatTutor({
                         } catch (e) {
                           antdMessage.error("Failed to load next requirement");
                         }
-                      } else if (!tool.data.passed) {
-                        // Not passed: ask the agent for a follow-up response after feedback
-                        setIsGrading(false);
-                        try {
-                          const afterFeedback = [...combined, tutorMsg];
-                          const follow = await sendAgentResponse(
-                            toApiMessages(afterFeedback),
-                            {
-                              requirements: derivedRequirements,
-                              currentRequirementIndex,
-                              currentModule: moduleName || currentTopic,
-                            }
-                          );
-                          const followMsg: ChatMessage = {
-                            id: String(Date.now() + 3),
-                            type: "tutor",
-                            content:
-                              (follow.message as any).choices?.[0]?.message
-                                ?.content ||
-                              follow.message.content ||
-                              "No response received",
-                            timestamp: new Date(),
-                          };
-                          setMessages((prev) => [...prev, followMsg]);
-                          const followTool = (follow.message as any).tool;
-                          if (followTool && followTool.type === "quiz") {
-                            setActiveQuiz(followTool.data as QuizToolData);
-                            setSelectedQuizOption(null);
-                          } else if (
-                            followTool &&
-                            followTool.type === "shortAnswer"
-                          ) {
-                            setActiveShortAnswer(
-                              followTool.data as ShortAnswerToolData
-                            );
-                            setShortAnswerInput("");
-                            setShortAnswerSubmitted(false);
-                          }
-                        } catch (e) {
-                          antdMessage.error(
-                            "Failed to load follow-up response"
-                          );
-                        }
                       }
                     }
                   } catch (e) {
@@ -1172,6 +1094,17 @@ export function ChatTutor({
                     setActiveShortAnswer(null);
                     setShortAnswerInput("");
                     setShortAnswerSubmitted(false);
+
+                    // Process any follow-up tool from grading response
+                    const tool = (res.response as any).tool;
+                    if (tool && tool.type === "shortAnswer") {
+                      setActiveShortAnswer(tool.data as ShortAnswerToolData);
+                      setShortAnswerInput("");
+                      setShortAnswerSubmitted(false);
+                    } else if (tool && tool.type === "quiz") {
+                      setActiveQuiz(tool.data as QuizToolData);
+                      setSelectedQuizOption(null);
+                    }
 
                     // If grading passed, show completion message
                     if (

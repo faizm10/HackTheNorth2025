@@ -163,25 +163,27 @@ ${JSON.stringify(
   try {
     const completion = await getLLMCompletion(
       promptMessages,
-      "command-a-reasoning-08-2025",
-      200
+      "command-a-03-2025"
     );
     const responseText = completion.choices?.[0]?.message?.content;
 
-    if (!responseText) {
-      throw new Error("Failed to get grading response from LLM");
-    }
+    // if (!responseText) {
+    //   throw new Error("Failed to get grading response from LLM");
+    // }
 
     // Parse the JSON response
-    const gradingResult = JSON.parse(responseText.trim());
+    console.log("responseText", responseText);
+    // Handle potential markdown formatting around JSON
+    let jsonText = responseText.trim();
 
-    // Validate the response structure
-    if (
-      typeof gradingResult.passed !== "boolean" ||
-      typeof gradingResult.feedback !== "string"
-    ) {
-      throw new Error("Invalid grading response format");
+    // Remove markdown code block formatting if present
+    if (jsonText.startsWith("```json")) {
+      jsonText = jsonText.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+    } else if (jsonText.startsWith("```")) {
+      jsonText = jsonText.replace(/^```\s*/, "").replace(/\s*```$/, "");
     }
+
+    const gradingResult = JSON.parse(jsonText);
 
     return gradingResult as GradingResponse;
   } catch (error) {

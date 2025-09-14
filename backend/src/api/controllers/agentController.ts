@@ -465,8 +465,6 @@ export const getLLMResponse = async (
       throw new Error("Failed to generate response from Cohere");
     }
 
-    console.log("LLM response with tools", responseMessage);
-
     let toolResponse: any;
 
     // Handle tool calls if present
@@ -529,7 +527,6 @@ export const generateQuiz = async (messages: ChatCompletionMessageParam[]) => {
   );
 
   const completionResults = await Promise.allSettled(completionPromises);
-  console.log("quiz completions", completionResults);
 
   // Find the first valid response
   for (const result of completionResults) {
@@ -596,8 +593,6 @@ export const generateShortAnswer = async (
   );
 
   const completionResults = await Promise.allSettled(completionPromises);
-  console.log("short answer completions", completionResults);
-
   // Find the first valid response
   for (const result of completionResults) {
     if (result.status === "fulfilled") {
@@ -731,7 +726,13 @@ export const gradeSubmission = async (req: Request, res: Response) => {
       ...messages,
       {
         role: "system",
-        content: `Grading Result: ${gradingResult.feedback} This is the feedback from the user's answer. Please take this into account with your teaching.`,
+        content: `Grading Result: ${
+          gradingResult.feedback
+        } This is the feedback from the user's answer. Please deliver this feedback to the user in a digestible way.${
+          !gradingResult.passed
+            ? " Since they didn't pass, end your message with a follow-up question to challenge the user and help them improve their understanding."
+            : ""
+        }`,
       },
     ];
 
