@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
+import katex from "katex";
 import "katex/dist/katex.min.css";
 
 /**
@@ -63,6 +64,18 @@ export function MarkdownRenderer({
   content,
   fontSize = 16,
 }: MarkdownRendererProps) {
+  // Normalize common math delimiters used by some models: \( ... \) and \[ ... \]
+  const normalizeMathDelimiters = (text: string) =>
+    text
+      // block math: \[ ... \] -> $$ ... $$
+      .replace(/\\\[/g, "$$")
+      .replace(/\\\]/g, "$$")
+      // inline math: \( ... \) -> $ ... $
+      .replace(/\\\(/g, "$")
+      .replace(/\\\)/g, "$");
+
+  const normalized = normalizeMathDelimiters(content || "");
+
   return (
     <div style={{ fontSize, color: "#141414", lineHeight: 1.6 }}>
       <ReactMarkdown
@@ -104,38 +117,52 @@ export function MarkdownRenderer({
            * Inline code: `const x = 5`
            * Block code: ```python\nprint("Hello")\n```
            */
-          code: ({ inline, children, ...props }: any) => (
-            <code
-              style={{
-                // Background: light gray for inline, slightly darker for blocks
-                background: inline ? "#f6f8fa" : "#fafafa",
-                border: "1px solid #f0f0f0",
-                borderRadius: 6,
+          code: ({ inline, className, children, ...props }: any) => {
+            const codeText = String(children ?? "").trim();
+            const isMathBlock =
+              !inline &&
+              (
+                (className && /language-(math|latex)/.test(className)) ||
+                /\\\[|\\\]|\\\(|\\\)|\\begin\{|^\$|\$\$/.test(codeText)
+              );
 
-                // Padding: minimal for inline, generous for blocks
-                padding: inline ? "0 4px" : 8,
+            if (isMathBlock) {
+              // Render math code blocks using KaTeX directly
+              const html = katex.renderToString(codeText, {
+                displayMode: true,
+                throwOnError: false,
+              });
+              return (
+                <div
+                  className="math-block"
+                  style={{ margin: "8px 0" }}
+                  dangerouslySetInnerHTML={{ __html: html }}
+                />
+              );
+            }
 
-                // Display: inline for text integration, block for code blocks
-                display: inline ? "inline" : "block",
-
-                // Horizontal scrolling for long code lines
-                overflowX: "auto",
-
-                // Professional monospace font stack
-                fontFamily:
-                  'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-
-                // Responsive font sizing: smaller for inline, slightly smaller for blocks
-                fontSize: inline ? fontSize - 2 : fontSize - 1,
-              }}
-              {...props}
-            >
-              {children}
-            </code>
-          ),
+            return (
+              <code
+                style={{
+                  background: inline ? "#f6f8fa" : "#fafafa",
+                  border: "1px solid #f0f0f0",
+                  borderRadius: 6,
+                  padding: inline ? "0 4px" : 8,
+                  display: inline ? "inline" : "block",
+                  overflowX: "auto",
+                  fontFamily:
+                    'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: inline ? fontSize - 2 : fontSize - 1,
+                }}
+                {...props}
+              >
+                {children}
+              </code>
+            );
+          },
         }}
       >
-        {content}
+        {normalized}
       </ReactMarkdown>
     </div>
   );

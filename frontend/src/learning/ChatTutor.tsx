@@ -224,6 +224,12 @@ export function ChatTutor({
         2. follow this with a short digestable example.
 
         sometimes, a user will ask you a follow up question. In this case, answer it to the best of your abilities.
+
+        Formatting rules for math:
+        - Use $ inline $ for inline math and $$ block $$ for display math.
+        - Do NOT wrap LaTeX in backticks or code fences.
+        - Do NOT escape dollar signs (no \\$, use $ instead).
+        - Prefer concise answers (120–180 words) unless asked for more detail.
                 `,
       },
       {
