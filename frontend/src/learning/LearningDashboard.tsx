@@ -157,7 +157,7 @@ export function LearningDashboard() {
   return (
     <Layout style={{ minHeight: '100vh', background: '#fff' }}>
       <Header style={{ background: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 1200, margin: '0 auto', padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px 24px' }}>
           <Space>
             <div style={{ width: 28, height: 28, background: '#1677ff', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <RocketOutlined style={{ color: '#fff', fontSize: 16 }} />
@@ -169,7 +169,7 @@ export function LearningDashboard() {
         </div>
       </Header>
 
-      <Content style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
+      <Content style={{ width: '100%', padding: '24px' }}>
         <Tabs defaultActiveKey="study" items={[
           {
             key: 'study',
@@ -179,7 +179,7 @@ export function LearningDashboard() {
               </Space>
             ),
             children: (
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, minHeight: 'calc(100vh - 200px)' }}>
                 <div style={{ display: 'grid', gap: 16 }}>
                   {activeStudyGuides.map((guide) => (
                     <Card key={guide.id} style={{ minHeight: activeStudyGuides.length === 1 ? 360 : undefined }}>
@@ -238,7 +238,7 @@ export function LearningDashboard() {
               </Space>
             ),
             children: (
-              <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gap: 8 }}>
+              <div style={{ width: '100%', display: 'grid', gap: 16, minHeight: 'calc(100vh - 200px)' }}>
                 <Row gutter={16}>
                   <Col xs={24} md={12}>
                     <Card bordered={false}>
@@ -280,7 +280,7 @@ export function LearningDashboard() {
                 )}
 
                 {(studyContent || (uploadedFiles.length > 0 && extractedText.length > 100)) && (
-                  <div style={{ maxWidth: 720, margin: '0 auto' }}>
+                  <div style={{ width: '100%' }}>
                     <StudyGuideGenerator
                       topic={studyContent?.topic || 'Uploaded Content'}
                       difficulty={studyContent?.difficulty || 'intermediate'}
