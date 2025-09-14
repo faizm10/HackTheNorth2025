@@ -150,6 +150,11 @@ export function ChatTutor({
 
   /** Loading state for AI response generation */
   const [isLoading, setIsLoading] = useState(true);
+  const [isGrading, setIsGrading] = useState(false);
+  const [gradingMessage, setGradingMessage] = useState<
+    "evaluating" | "feedback"
+  >("evaluating");
+  const [messageVisible, setMessageVisible] = useState(true);
   const [activeQuiz, setActiveQuiz] = useState<QuizToolData | null>(null);
   const [selectedQuizOption, setSelectedQuizOption] = useState<string | null>(
     null
@@ -186,10 +191,14 @@ export function ChatTutor({
 
   /**
    * Auto-scroll effect to keep the latest message visible.
-   * Triggers smooth scrolling whenever new messages are added.
+   * Only scrolls when user sends a message, not when agent responds.
    */
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Only scroll if the last message is from the user
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.type === "user") {
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Map UI messages to API messages
@@ -271,6 +280,26 @@ export function ChatTutor({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTopic]);
+
+  // Handle grading message switching and fade transitions
+  useEffect(() => {
+    if (!isGrading) return;
+
+    const interval = setInterval(() => {
+      // Start fade out
+      setMessageVisible(false);
+
+      // After 50ms, switch message and fade back in
+      setTimeout(() => {
+        setGradingMessage((current) =>
+          current === "evaluating" ? "feedback" : "evaluating"
+        );
+        setMessageVisible(true);
+      }, 50);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isGrading]);
 
   /**
    * Intelligently finds relevant context from lesson content based on user query.
@@ -446,6 +475,86 @@ export function ChatTutor({
       } else if (tool && tool.type === "shortAnswer") {
         setActiveShortAnswer(tool.data as ShortAnswerToolData);
         setShortAnswerInput("");
+      } else if (tool && tool.type === "grading") {
+        // Handle requirement understanding evaluation
+        if (
+          tool.data.passed &&
+          currentRequirementIndex < derivedRequirements.length - 1
+        ) {
+          const nextIndex = currentRequirementIndex + 1;
+          setCurrentRequirementIndex(nextIndex);
+          // Ensure we show typing indicator (not grading) during transition
+          setIsGrading(false);
+          try {
+            const next = await getInitialAgentResponse(
+              buildInitialMessages(
+                derivedRequirements[nextIndex] || currentTopic
+              ),
+              {
+                requirements: derivedRequirements,
+                currentRequirementIndex: nextIndex,
+                currentModule: moduleName || currentTopic,
+              }
+            );
+            const nextMsg: ChatMessage = {
+              id: String(Date.now() + 2),
+              type: "tutor",
+              content:
+                (next.message as any).choices?.[0]?.message?.content ||
+                next.message.content ||
+                "No response received",
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, nextMsg]);
+            // Handle any tools from the next requirement lesson
+            const nextTool = (next.message as any).tool;
+            if (nextTool && nextTool.type === "quiz") {
+              setActiveQuiz(nextTool.data as QuizToolData);
+              setSelectedQuizOption(null);
+            } else if (nextTool && nextTool.type === "shortAnswer") {
+              setActiveShortAnswer(nextTool.data as ShortAnswerToolData);
+              setShortAnswerInput("");
+              setShortAnswerSubmitted(false);
+            }
+          } catch (e: any) {
+            antdMessage.error("Failed to load next requirement");
+          }
+        } else if (!tool.data.passed) {
+          // Not passed: ask the agent for a follow-up response after feedback
+          setIsGrading(false);
+          try {
+            const afterFeedback = [...combined, tutorMsg];
+            const follow = await sendAgentResponse(
+              toApiMessages(afterFeedback),
+              {
+                requirements: derivedRequirements,
+                currentRequirementIndex,
+                currentModule: moduleName || currentTopic,
+              }
+            );
+            const followMsg: ChatMessage = {
+              id: String(Date.now() + 3),
+              type: "tutor",
+              content:
+                (follow.message as any).choices?.[0]?.message?.content ||
+                follow.message.content ||
+                "No response received",
+              timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, followMsg]);
+            const followTool = (follow.message as any).tool;
+            if (followTool && followTool.type === "quiz") {
+              setActiveQuiz(followTool.data as QuizToolData);
+              setSelectedQuizOption(null);
+            } else if (followTool && followTool.type === "shortAnswer") {
+              setActiveShortAnswer(followTool.data as ShortAnswerToolData);
+              setShortAnswerInput("");
+              setShortAnswerSubmitted(false);
+            }
+          } catch (e: any) {
+            antdMessage.error("Failed to load follow-up response");
+          }
+        }
       }
     } catch (e: any) {
       const msg = e?.message || "Failed to get AI response";
@@ -514,6 +623,52 @@ export function ChatTutor({
       } else if (tool && tool.type === "shortAnswer") {
         setActiveShortAnswer(tool.data as ShortAnswerToolData);
         setShortAnswerInput("");
+      } else if (tool && tool.type === "grading") {
+        // Handle requirement understanding evaluation
+        if (
+          tool.data.passed &&
+          currentRequirementIndex < derivedRequirements.length - 1
+        ) {
+          const nextIndex = currentRequirementIndex + 1;
+          setCurrentRequirementIndex(nextIndex);
+          // Fetch next requirement lesson
+          (async () => {
+            try {
+              const next = await getInitialAgentResponse(
+                buildInitialMessages(
+                  derivedRequirements[nextIndex] || currentTopic
+                ),
+                {
+                  requirements: derivedRequirements,
+                  currentRequirementIndex: nextIndex,
+                  currentModule: moduleName || currentTopic,
+                }
+              );
+              const nextMsg: ChatMessage = {
+                id: String(Date.now() + 2),
+                type: "tutor",
+                content:
+                  (next.message as any).choices?.[0]?.message?.content ||
+                  next.message.content ||
+                  "No response received",
+                timestamp: new Date(),
+              };
+              setMessages((prev) => [...prev, nextMsg]);
+              // Handle any tools from the next requirement lesson
+              const nextTool = (next.message as any).tool;
+              if (nextTool && nextTool.type === "quiz") {
+                setActiveQuiz(nextTool.data as QuizToolData);
+                setSelectedQuizOption(null);
+              } else if (nextTool && nextTool.type === "shortAnswer") {
+                setActiveShortAnswer(nextTool.data as ShortAnswerToolData);
+                setShortAnswerInput("");
+                setShortAnswerSubmitted(false);
+              }
+            } catch (e: any) {
+              antdMessage.error("Failed to load next requirement");
+            }
+          })();
+        }
       }
     } catch (e: any) {
       const msg = e?.message || "Failed to regenerate response";
@@ -776,11 +931,16 @@ export function ChatTutor({
                   const combined = [...messages, answerMsg];
                   setMessages(combined);
                   setIsLoading(true);
+                  setIsGrading(true);
+                  setMessageVisible(true);
                   try {
                     const res = await gradeAnswer({
                       question: activeQuiz.question,
                       answer: answerText,
                       messages: toApiMessages(combined),
+                      requirements: derivedRequirements,
+                      currentRequirementIndex,
+                      currentModule: moduleName || currentTopic,
                     });
                     const tutorMsg: ChatMessage = {
                       id: String(Date.now() + 1),
@@ -791,43 +951,102 @@ export function ChatTutor({
                     setMessages((prev) => [...prev, tutorMsg]);
                     setActiveQuiz(null);
                     setSelectedQuizOption(null);
-                    // If grading passed, advance to next requirement and fetch new lesson
-                    if (
-                      res.grading?.passed &&
-                      currentRequirementIndex < derivedRequirements.length - 1
-                    ) {
-                      const nextIndex = currentRequirementIndex + 1;
-                      setCurrentRequirementIndex(nextIndex);
-                      const next = await getInitialAgentResponse(
-                        buildInitialMessages(
-                          derivedRequirements[nextIndex] || currentTopic
-                        ),
-                        {
-                          requirements: derivedRequirements,
-                          currentRequirementIndex: nextIndex,
-                          currentModule: moduleName || currentTopic,
+
+                    // Handle tool responses for requirement progression
+                    const tool = (res.response as any).tool;
+                    if (tool && tool.type === "grading") {
+                      // Handle requirement understanding evaluation
+                      if (
+                        tool.data.passed &&
+                        currentRequirementIndex < derivedRequirements.length - 1
+                      ) {
+                        const nextIndex = currentRequirementIndex + 1;
+                        setCurrentRequirementIndex(nextIndex);
+                        // Switch indicator from grading to typing during transition
+                        setIsGrading(false);
+                        try {
+                          const next = await getInitialAgentResponse(
+                            buildInitialMessages(
+                              derivedRequirements[nextIndex] || currentTopic
+                            ),
+                            {
+                              requirements: derivedRequirements,
+                              currentRequirementIndex: nextIndex,
+                              currentModule: moduleName || currentTopic,
+                            }
+                          );
+                          const nextMsg: ChatMessage = {
+                            id: String(Date.now() + 2),
+                            type: "tutor",
+                            content:
+                              (next.message as any).choices?.[0]?.message
+                                ?.content ||
+                              next.message.content ||
+                              "No response received",
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, nextMsg]);
+                          // Handle any tools from the next requirement lesson
+                          const nextTool = (next.message as any).tool;
+                          if (nextTool && nextTool.type === "quiz") {
+                            setActiveQuiz(nextTool.data as QuizToolData);
+                            setSelectedQuizOption(null);
+                          } else if (
+                            nextTool &&
+                            nextTool.type === "shortAnswer"
+                          ) {
+                            setActiveShortAnswer(
+                              nextTool.data as ShortAnswerToolData
+                            );
+                            setShortAnswerInput("");
+                            setShortAnswerSubmitted(false);
+                          }
+                        } catch (e: any) {
+                          antdMessage.error("Failed to load next requirement");
                         }
-                      );
-                      const nextMsg: ChatMessage = {
-                        id: String(Date.now() + 2),
-                        type: "tutor",
-                        content:
-                          (next.message as any).choices?.[0]?.message
-                            ?.content ||
-                          next.message.content ||
-                          "No response received",
-                        timestamp: new Date(),
-                      };
-                      setMessages((prev) => [...prev, nextMsg]);
-                      const nextTool = (next.message as any).tool;
-                      if (nextTool && nextTool.type === "quiz") {
-                        setActiveQuiz(nextTool.data as QuizToolData);
-                        setSelectedQuizOption(null);
-                      } else if (nextTool && nextTool.type === "shortAnswer") {
-                        setActiveShortAnswer(
-                          nextTool.data as ShortAnswerToolData
-                        );
-                        setShortAnswerInput("");
+                      } else if (!tool.data.passed) {
+                        // Not passed: ask the agent for a follow-up response after feedback
+                        setIsGrading(false);
+                        try {
+                          const afterFeedback = [...combined, tutorMsg];
+                          const follow = await sendAgentResponse(
+                            toApiMessages(afterFeedback),
+                            {
+                              requirements: derivedRequirements,
+                              currentRequirementIndex,
+                              currentModule: moduleName || currentTopic,
+                            }
+                          );
+                          const followMsg: ChatMessage = {
+                            id: String(Date.now() + 3),
+                            type: "tutor",
+                            content:
+                              (follow.message as any).choices?.[0]?.message
+                                ?.content ||
+                              follow.message.content ||
+                              "No response received",
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, followMsg]);
+                          const followTool = (follow.message as any).tool;
+                          if (followTool && followTool.type === "quiz") {
+                            setActiveQuiz(followTool.data as QuizToolData);
+                            setSelectedQuizOption(null);
+                          } else if (
+                            followTool &&
+                            followTool.type === "shortAnswer"
+                          ) {
+                            setActiveShortAnswer(
+                              followTool.data as ShortAnswerToolData
+                            );
+                            setShortAnswerInput("");
+                            setShortAnswerSubmitted(false);
+                          }
+                        } catch (e: any) {
+                          antdMessage.error(
+                            "Failed to load follow-up response"
+                          );
+                        }
                       }
                     }
                   } catch (e: any) {
@@ -836,6 +1055,7 @@ export function ChatTutor({
                     appendTutorError(msg);
                   } finally {
                     setIsLoading(false);
+                    setIsGrading(false);
                   }
                 }}
               >
@@ -894,6 +1114,8 @@ export function ChatTutor({
                   const combined = [...messages, answerMsg];
                   setMessages(combined);
                   setIsLoading(true);
+                  setIsGrading(true);
+                  setMessageVisible(true);
                   setShortAnswerSubmitted(true);
 
                   try {
@@ -901,6 +1123,9 @@ export function ChatTutor({
                       question: activeShortAnswer.question,
                       answer: shortAnswerInput.trim(),
                       messages: toApiMessages(combined),
+                      requirements: derivedRequirements,
+                      currentRequirementIndex,
+                      currentModule: moduleName || currentTopic,
                     });
                     const tutorMsg: ChatMessage = {
                       id: String(Date.now() + 1),
@@ -913,44 +1138,104 @@ export function ChatTutor({
                     setShortAnswerInput("");
                     setShortAnswerSubmitted(false);
 
-                    // If grading passed, advance to next requirement and fetch new lesson
-                    if (
-                      res.grading?.passed &&
-                      currentRequirementIndex < derivedRequirements.length - 1
-                    ) {
-                      const nextIndex = currentRequirementIndex + 1;
-                      setCurrentRequirementIndex(nextIndex);
-                      const next = await getInitialAgentResponse(
-                        buildInitialMessages(
-                          derivedRequirements[nextIndex] || currentTopic
-                        ),
-                        {
-                          requirements: derivedRequirements,
-                          currentRequirementIndex: nextIndex,
-                          currentModule: moduleName || currentTopic,
+                    // Handle tool responses for requirement progression
+                    const tool = (res.response as any).tool;
+                    if (tool && tool.type === "grading") {
+                      // Handle requirement understanding evaluation
+                      if (
+                        tool.data.passed &&
+                        currentRequirementIndex < derivedRequirements.length - 1
+                      ) {
+                        const nextIndex = currentRequirementIndex + 1;
+                        setCurrentRequirementIndex(nextIndex);
+                        // Fetch next requirement lesson
+                        (async () => {
+                          try {
+                            const next = await getInitialAgentResponse(
+                              buildInitialMessages(
+                                derivedRequirements[nextIndex] || currentTopic
+                              ),
+                              {
+                                requirements: derivedRequirements,
+                                currentRequirementIndex: nextIndex,
+                                currentModule: moduleName || currentTopic,
+                              }
+                            );
+                            const nextMsg: ChatMessage = {
+                              id: String(Date.now() + 2),
+                              type: "tutor",
+                              content:
+                                (next.message as any).choices?.[0]?.message
+                                  ?.content ||
+                                next.message.content ||
+                                "No response received",
+                              timestamp: new Date(),
+                            };
+                            setMessages((prev) => [...prev, nextMsg]);
+                            // Handle any tools from the next requirement lesson
+                            const nextTool = (next.message as any).tool;
+                            if (nextTool && nextTool.type === "quiz") {
+                              setActiveQuiz(nextTool.data as QuizToolData);
+                              setSelectedQuizOption(null);
+                            } else if (
+                              nextTool &&
+                              nextTool.type === "shortAnswer"
+                            ) {
+                              setActiveShortAnswer(
+                                nextTool.data as ShortAnswerToolData
+                              );
+                              setShortAnswerInput("");
+                              setShortAnswerSubmitted(false);
+                            }
+                          } catch (e: any) {
+                            antdMessage.error(
+                              "Failed to load next requirement"
+                            );
+                          }
+                        })();
+                      } else if (!tool.data.passed) {
+                        // Not passed: ask the agent for a follow-up response after feedback
+                        setIsGrading(false);
+                        try {
+                          const afterFeedback = [...combined, tutorMsg];
+                          const follow = await sendAgentResponse(
+                            toApiMessages(afterFeedback),
+                            {
+                              requirements: derivedRequirements,
+                              currentRequirementIndex,
+                              currentModule: moduleName || currentTopic,
+                            }
+                          );
+                          const followMsg: ChatMessage = {
+                            id: String(Date.now() + 3),
+                            type: "tutor",
+                            content:
+                              (follow.message as any).choices?.[0]?.message
+                                ?.content ||
+                              follow.message.content ||
+                              "No response received",
+                            timestamp: new Date(),
+                          };
+                          setMessages((prev) => [...prev, followMsg]);
+                          const followTool = (follow.message as any).tool;
+                          if (followTool && followTool.type === "quiz") {
+                            setActiveQuiz(followTool.data as QuizToolData);
+                            setSelectedQuizOption(null);
+                          } else if (
+                            followTool &&
+                            followTool.type === "shortAnswer"
+                          ) {
+                            setActiveShortAnswer(
+                              followTool.data as ShortAnswerToolData
+                            );
+                            setShortAnswerInput("");
+                            setShortAnswerSubmitted(false);
+                          }
+                        } catch (e: any) {
+                          antdMessage.error(
+                            "Failed to load follow-up response"
+                          );
                         }
-                      );
-                      const nextMsg: ChatMessage = {
-                        id: String(Date.now() + 2),
-                        type: "tutor",
-                        content:
-                          (next.message as any).choices?.[0]?.message
-                            ?.content ||
-                          next.message.content ||
-                          "No response received",
-                        timestamp: new Date(),
-                      };
-                      setMessages((prev) => [...prev, nextMsg]);
-                      const nextTool = (next.message as any).tool;
-                      if (nextTool && nextTool.type === "quiz") {
-                        setActiveQuiz(nextTool.data as QuizToolData);
-                        setSelectedQuizOption(null);
-                      } else if (nextTool && nextTool.type === "shortAnswer") {
-                        setActiveShortAnswer(
-                          nextTool.data as ShortAnswerToolData
-                        );
-                        setShortAnswerInput("");
-                        setShortAnswerSubmitted(false);
                       }
                     }
                   } catch (e: any) {
@@ -960,6 +1245,7 @@ export function ChatTutor({
                     setShortAnswerSubmitted(false); // Allow retry on error
                   } finally {
                     setIsLoading(false);
+                    setIsGrading(false);
                   }
                 }}
               >
@@ -974,8 +1260,19 @@ export function ChatTutor({
               icon={<RobotOutlined />}
               style={{ background: "#52c41a" }}
             />
-            <Text type="secondary" italic>
-              AI Tutor is typing...
+            <Text
+              type="secondary"
+              italic
+              style={{
+                opacity: messageVisible ? 1 : 0,
+                transition: "opacity 50ms ease-in-out",
+              }}
+            >
+              {isGrading
+                ? gradingMessage === "evaluating"
+                  ? "Evaluating..."
+                  : "Providing feedback..."
+                : "AI Tutor is typing..."}
             </Text>
           </Space>
         )}

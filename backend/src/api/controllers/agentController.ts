@@ -53,9 +53,9 @@ const MODEL = DEFAULT_MODEL;
  * @property {CurrentQuestion|null} currentQuestion - Currently active question/quiz if any
  */
 const context = {
-  currentRequirement: "The user must understand the concept of addition",
-  completedRequirements: ["something"],
-  currentModule: "Module 1",
+  currentRequirement: "",
+  completedRequirements: [""],
+  currentModule: "",
   currentQuestion: null as CurrentQuestion | null,
 };
 
@@ -278,7 +278,31 @@ export const getInitialResponse = async (req: Request, res: Response) => {
 
     const generatedMessage = await getLLMResponse(messagesWithSystem, {
       model: MODEL,
+      skipTools: true,
     });
+
+    // Check if no tool was called, and if so, call the quiz tool
+    if (!generatedMessage.tool) {
+      try {
+        const quizResult = await generateQuiz(messagesWithSystem);
+        context.currentQuestion = { type: "quiz", data: quizResult };
+        const toolData = { type: "quiz", data: quizResult };
+
+        // Add the quiz tool to the response
+        const messageWithQuiz = {
+          ...generatedMessage,
+          tool: toolData,
+        };
+
+        return res.json({
+          success: true,
+          message: messageWithQuiz,
+        });
+      } catch (error) {
+        console.error("Failed to generate quiz:", error);
+        // If quiz generation fails, just return the original message
+      }
+    }
 
     res.json({
       success: true,
@@ -383,12 +407,18 @@ export const getLLMResponse = async (
   extraContext: Record<string, any>
 ) => {
   const model = (extraContext?.model as string) || MODEL;
+  const skipTools = extraContext?.skipTools === true;
 
   try {
     const completion: any = await chatCompletionsCreate({
       model,
       messages,
     });
+
+    // If skipTools flag is set, return the basic completion without tool processing
+    if (skipTools) {
+      return { ...completion.choices?.[0]?.message };
+    }
 
     const completionWithTools: any = await chatCompletionsCreate({
       model: "command-a-reasoning-08-2025",
@@ -436,14 +466,15 @@ export const getLLMResponse = async (
  *
  * This function creates interactive quiz questions to test student understanding
  * of the concepts being discussed. The quiz includes multiple choice options
- * and tracks the correct answer for grading purposes.
+ * and tracks the correct answer for grading purposes. Generates 5 options in
+ * parallel and returns the first valid response.
  *
  * @async
  * @function generateQuiz
  * @param {ChatCompletionMessageParam[]} messages - Conversation context
  * @returns {Promise<Object>} Quiz object with question, options, and answer
  *
- * @throws {Error} When quiz generation fails or returns invalid JSON
+ * @throws {Error} When all 5 quiz generation attempts fail or return invalid JSON
  *
  * @example
  * // Returned quiz structure
@@ -467,22 +498,37 @@ export const generateQuiz = async (messages: ChatCompletionMessageParam[]) => {
     ...messages.filter((msg) => msg.role !== "system"),
   ];
 
-  const completion: any = await getLLMCompletion(
-    promptMessages,
-    "command-a-03-2025"
+  // Generate 5 options in parallel
+  const completionPromises = Array.from({ length: 5 }, () =>
+    getLLMCompletion(promptMessages, "command-a-03-2025")
   );
 
-  console.log("quiz completion", completion);
-  const generatedMessage = completion.choices?.[0]?.message?.content;
-  if (!generatedMessage) {
-    throw new Error("Failed to generate quiz from Cohere");
+  const completionResults = await Promise.allSettled(completionPromises);
+  console.log("quiz completions", completionResults);
+
+  // Find the first valid response
+  for (const result of completionResults) {
+    if (result.status === "fulfilled") {
+      try {
+        const generatedMessage = result.value.choices?.[0]?.message?.content;
+        if (generatedMessage) {
+          const quiz = JSON.parse(generatedMessage.trim());
+          // Validate that the quiz has the required structure
+          if (quiz.question && quiz.options && quiz.answer) {
+            return quiz;
+          }
+        }
+      } catch (e) {
+        // Continue to next option if parsing fails
+        console.log("Quiz parsing failed, trying next option:", e);
+        continue;
+      }
+    }
   }
-  try {
-    const quiz = JSON.parse(generatedMessage.trim());
-    return quiz;
-  } catch (e) {
-    throw new Error("Quiz response was not valid JSON: " + generatedMessage);
-  }
+
+  throw new Error(
+    "All 5 quiz generation attempts failed to produce valid JSON"
+  );
 };
 
 /**
@@ -490,14 +536,15 @@ export const generateQuiz = async (messages: ChatCompletionMessageParam[]) => {
  *
  * This function creates open-ended questions that require students to
  * demonstrate their understanding through written explanations rather
- * than multiple choice selections.
+ * than multiple choice selections. Generates 5 options in parallel and
+ * returns the first valid response.
  *
  * @async
  * @function generateShortAnswer
  * @param {ChatCompletionMessageParam[]} messages - Conversation context
  * @returns {Promise<Object>} Short answer question with ideal response
  *
- * @throws {Error} When question generation fails or returns invalid JSON
+ * @throws {Error} When all 5 question generation attempts fail or return invalid JSON
  *
  * @example
  * // Returned question structure
@@ -518,19 +565,37 @@ export const generateShortAnswer = async (
     ...messages.filter((msg) => msg.role !== "system"),
   ];
 
-  const completion: any = await getLLMCompletion(promptMessages);
-  const generatedMessage = completion.choices?.[0]?.message?.content;
-  if (!generatedMessage) {
-    throw new Error("Failed to generate short answer from Cohere");
+  // Generate 5 options in parallel
+  const completionPromises = Array.from({ length: 5 }, () =>
+    getLLMCompletion(promptMessages)
+  );
+
+  const completionResults = await Promise.allSettled(completionPromises);
+  console.log("short answer completions", completionResults);
+
+  // Find the first valid response
+  for (const result of completionResults) {
+    if (result.status === "fulfilled") {
+      try {
+        const generatedMessage = result.value.choices?.[0]?.message?.content;
+        if (generatedMessage) {
+          const shortAnswer = JSON.parse(generatedMessage.trim());
+          // Validate that the short answer has the required structure
+          if (shortAnswer.question && shortAnswer.idealAnswer) {
+            return shortAnswer;
+          }
+        }
+      } catch (e) {
+        // Continue to next option if parsing fails
+        console.log("Short answer parsing failed, trying next option:", e);
+        continue;
+      }
+    }
   }
-  try {
-    const shortAnswer = JSON.parse(generatedMessage.trim());
-    return shortAnswer;
-  } catch (e) {
-    throw new Error(
-      "Short answer response was not valid JSON: " + generatedMessage
-    );
-  }
+
+  throw new Error(
+    "All 5 short answer generation attempts failed to produce valid JSON"
+  );
 };
 
 /**
@@ -577,10 +642,16 @@ export const gradeSubmission = async (req: Request, res: Response) => {
       question,
       answer,
       messages = [],
+      requirements,
+      currentRequirementIndex,
+      currentModule,
     } = req.body as {
       question: string;
       answer: string;
       messages?: ChatMessage[];
+      requirements?: Array<string | { description: string }>;
+      currentRequirementIndex?: number;
+      currentModule?: string;
     };
 
     // Validate required fields
@@ -590,8 +661,40 @@ export const gradeSubmission = async (req: Request, res: Response) => {
       });
     }
 
-    // Call the grading controller to get the grading result
-    const gradingResult = await answerGrading(question, answer);
+    // Update tutoring context if metadata provided
+    if (
+      Array.isArray(requirements) &&
+      typeof currentRequirementIndex === "number"
+    ) {
+      const idx = Math.max(
+        0,
+        Math.min(currentRequirementIndex, requirements.length - 1)
+      );
+      const req = requirements[idx];
+      context.currentRequirement =
+        typeof req === "string"
+          ? req
+          : req?.description || context.currentRequirement;
+    }
+    if (typeof currentModule === "string" && currentModule.trim()) {
+      context.currentModule = currentModule.trim();
+    }
+
+    // Use the full grading agent that considers conversation context
+    // Add the question and answer to the conversation context for comprehensive evaluation
+    const messagesWithQuestionAndAnswer: ChatCompletionMessageParam[] = [
+      ...messages,
+      {
+        role: "user",
+        content: `Question: ${question}\nMy Answer: ${answer}`,
+      },
+    ];
+
+    // Call the full grading agent to get comprehensive evaluation
+    const gradingResult = await gradeRequirementUnderstanding(
+      messagesWithQuestionAndAnswer,
+      context.currentRequirement
+    );
 
     // Clear current question if grading passed
     if (gradingResult.passed) {
@@ -608,15 +711,26 @@ export const gradeSubmission = async (req: Request, res: Response) => {
     ];
 
     // Get the LLM's response based on the grading
-    // TODO: Add next requirement or end module
     const llmResponse = await getLLMResponse(messagesWithGrading, {
       model: MODEL,
     });
 
+    // If the grading passed, add a grading tool to trigger requirement progression
+    let responseWithTool = llmResponse;
+    if (gradingResult.passed) {
+      responseWithTool = {
+        ...llmResponse,
+        tool: {
+          type: "grading",
+          data: gradingResult,
+        },
+      };
+    }
+
     res.json({
       success: true,
       grading: gradingResult,
-      response: llmResponse,
+      response: responseWithTool,
     });
   } catch (error: any) {
     if (error?.status) {

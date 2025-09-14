@@ -136,7 +136,7 @@ Current Requirement: "${currentRequirement}"
 Respond ONLY in the following JSON format:
 {
   "passed": true/false,
-  "feedback": "Detailed feedback explaining why they passed or failed, including specific areas of strength or weakness"
+  "feedback": "Detailed feedback explaining why they passed or failed, including specific areas of strength or weakness. Do not include another lesson. Only include specific feedback about their understanding."
 }
 
 Consider the following criteria:

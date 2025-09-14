@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 
-export const DEFAULT_MODEL = "command-a-reasoning-08-2025";
+export const DEFAULT_MODEL = "command-a-03-2025"; //"command-a-reasoning-08-2025";
 
 const openai = new OpenAI({
   apiKey:

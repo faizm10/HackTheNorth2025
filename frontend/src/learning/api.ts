@@ -96,6 +96,9 @@ export async function gradeAnswer(input: {
   question: string;
   answer: string;
   messages?: ApiMessage[];
+  requirements?: Array<string | { description: string }>;
+  currentRequirementIndex?: number;
+  currentModule?: string;
 }): Promise<{
   success: boolean;
   grading: { passed: boolean; feedback: string };
