@@ -163,7 +163,7 @@ export function LearningDashboard() {
               <RocketOutlined style={{ color: '#fff', fontSize: 16 }} />
             </div>
             <div>
-              <Title level={3} style={{ margin: 0 }}>LearnAI Academy</Title>
+              <Title level={3} style={{ margin: 0 }}>Cognify</Title>
             </div>
           </Space>
         </div>
