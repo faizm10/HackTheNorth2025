@@ -349,24 +349,7 @@ export function StudySession({
                     : undefined
                 }
               />
-            {/* </div> */}
-            {/* <div style={{ minHeight: 0 }}>
-              <QuizPanel
-                key={`${guide.title}::${currentUnitData.unitName}::${currentLessonData.title}`}
-                topic={currentLessonData.title}
-                lessonTitle={currentLessonData.title}
-                content={currentLessonData.content}
-                onComplete={({ correct, total }) => {
-                  if (correct === total) {
-                    setCompletedQuizzes((prev) => {
-                      const next = new Set(prev)
-                      next.add(currentIndex)
-                      return next
-                    })
-                  }
-                }}
-              />
-            </div> */}
+       {/* removed the quiz */}
           </div>
         </div>
       </Content>

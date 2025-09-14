@@ -38,7 +38,8 @@ const { Text } = Typography;
  * Represents a single message in the chat conversation between user and AI tutor.
  *
  * @interface ChatMessage
- * @property {string} id - Unique identifier for the message (typically timestamp-based)
+ * @property {string} id - Unique identifier for the me
+ *usinssage (typically timestamp-based)
  * @property {'user' | 'tutor'} type - The sender type: 'user' for student messages, 'tutor' for AI responses
  * @property {string} content - The actual message content, supports markdown formatting
  * @property {Date} timestamp - When the message was created, used for ordering and display
@@ -760,12 +761,12 @@ export function ChatTutor({
         <Space size={8}>
           <RobotOutlined style={{ color: "#1890ff" }} />
           <Text strong>AI Tutor</Text>
-          <Tag color="blue">{currentTopic}</Tag>
+          {/* <Tag color="blue">{currentTopic}</Tag> */}
         </Space>
       }
       extra={
         <Space>
-          <Tooltip title="Response mode">
+          {/* <Tooltip title="Response mode">
             <Select
               size="small"
               style={{ width: 130 }}
@@ -819,7 +820,7 @@ export function ChatTutor({
                 { value: "deep", label: "Deep" },
               ]}
             />
-          </Tooltip>
+          </Tooltip> */}
           <Tooltip title="Reset chat">
             <Button
               icon={<DeleteOutlined />}
@@ -833,7 +834,7 @@ export function ChatTutor({
         padding: 16,
         display: "flex",
         flexDirection: "column",
-        height: 420,
+        height: 600,
       }}
     >
       {/* Quick actions */}
@@ -951,6 +952,15 @@ export function ChatTutor({
                     setMessages((prev) => [...prev, tutorMsg]);
                     setActiveQuiz(null);
                     setSelectedQuizOption(null);
+                    // If grading passed, show completion message
+                    if (res.grading?.passed) {
+                      const completionMsg: ChatMessage = {
+                        id: String(Date.now() + 2),
+                        type: "tutor",
+                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
+                        timestamp: new Date(),
+                      };
+                      setMessages((prev) => [...prev, completionMsg]);
 
                     // Handle tool responses for requirement progression
                     const tool = (res.response as any).tool;
@@ -1138,105 +1148,15 @@ export function ChatTutor({
                     setShortAnswerInput("");
                     setShortAnswerSubmitted(false);
 
-                    // Handle tool responses for requirement progression
-                    const tool = (res.response as any).tool;
-                    if (tool && tool.type === "grading") {
-                      // Handle requirement understanding evaluation
-                      if (
-                        tool.data.passed &&
-                        currentRequirementIndex < derivedRequirements.length - 1
-                      ) {
-                        const nextIndex = currentRequirementIndex + 1;
-                        setCurrentRequirementIndex(nextIndex);
-                        // Fetch next requirement lesson
-                        (async () => {
-                          try {
-                            const next = await getInitialAgentResponse(
-                              buildInitialMessages(
-                                derivedRequirements[nextIndex] || currentTopic
-                              ),
-                              {
-                                requirements: derivedRequirements,
-                                currentRequirementIndex: nextIndex,
-                                currentModule: moduleName || currentTopic,
-                              }
-                            );
-                            const nextMsg: ChatMessage = {
-                              id: String(Date.now() + 2),
-                              type: "tutor",
-                              content:
-                                (next.message as any).choices?.[0]?.message
-                                  ?.content ||
-                                next.message.content ||
-                                "No response received",
-                              timestamp: new Date(),
-                            };
-                            setMessages((prev) => [...prev, nextMsg]);
-                            // Handle any tools from the next requirement lesson
-                            const nextTool = (next.message as any).tool;
-                            if (nextTool && nextTool.type === "quiz") {
-                              setActiveQuiz(nextTool.data as QuizToolData);
-                              setSelectedQuizOption(null);
-                            } else if (
-                              nextTool &&
-                              nextTool.type === "shortAnswer"
-                            ) {
-                              setActiveShortAnswer(
-                                nextTool.data as ShortAnswerToolData
-                              );
-                              setShortAnswerInput("");
-                              setShortAnswerSubmitted(false);
-                            }
-                          } catch (e: any) {
-                            antdMessage.error(
-                              "Failed to load next requirement"
-                            );
-                          }
-                        })();
-                      } else if (!tool.data.passed) {
-                        // Not passed: ask the agent for a follow-up response after feedback
-                        setIsGrading(false);
-                        try {
-                          const afterFeedback = [...combined, tutorMsg];
-                          const follow = await sendAgentResponse(
-                            toApiMessages(afterFeedback),
-                            {
-                              requirements: derivedRequirements,
-                              currentRequirementIndex,
-                              currentModule: moduleName || currentTopic,
-                            }
-                          );
-                          const followMsg: ChatMessage = {
-                            id: String(Date.now() + 3),
-                            type: "tutor",
-                            content:
-                              (follow.message as any).choices?.[0]?.message
-                                ?.content ||
-                              follow.message.content ||
-                              "No response received",
-                            timestamp: new Date(),
-                          };
-                          setMessages((prev) => [...prev, followMsg]);
-                          const followTool = (follow.message as any).tool;
-                          if (followTool && followTool.type === "quiz") {
-                            setActiveQuiz(followTool.data as QuizToolData);
-                            setSelectedQuizOption(null);
-                          } else if (
-                            followTool &&
-                            followTool.type === "shortAnswer"
-                          ) {
-                            setActiveShortAnswer(
-                              followTool.data as ShortAnswerToolData
-                            );
-                            setShortAnswerInput("");
-                            setShortAnswerSubmitted(false);
-                          }
-                        } catch (e: any) {
-                          antdMessage.error(
-                            "Failed to load follow-up response"
-                          );
-                        }
-                      }
+                    // If grading passed, show completion message
+                    if (res.grading?.passed) {
+                      const completionMsg: ChatMessage = {
+                        id: String(Date.now() + 2),
+                        type: "tutor",
+                        content: "✅ Great job! You've completed this requirement. Please complete all requirements in this module before moving to the next one.",
+                        timestamp: new Date(),
+                      };
+                      setMessages((prev) => [...prev, completionMsg]);
                     }
                   } catch (e: any) {
                     const msg = e?.message || "Failed to grade answer";

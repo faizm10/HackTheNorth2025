@@ -35,6 +35,8 @@ export function StudyGuideGenerator({
   const [isGenerating, setIsGenerating] = useState(false)
   const [studyGuide, setStudyGuide] = useState<StudyGuideSection[] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [generationProgress, setGenerationProgress] = useState(0)
+  const [currentStep, setCurrentStep] = useState('')
 
   // Allow parent to trigger generation (upper button)
   useEffect(() => {
@@ -48,31 +50,55 @@ export function StudyGuideGenerator({
 
   const generate = async () => {
     setIsGenerating(true)
+    setGenerationProgress(0)
+    setCurrentStep('')
     if (onGeneratingChange) onGeneratingChange(true)
     setError(null)
-    // status banners removed; keep UI clean during generation
 
     try {
       let finalText = textContent
 
       // If we have files but no text content, extract text from files first
       if (files.length > 0 && (!textContent || textContent.length < 100)) {
+        setCurrentStep('Uploading and extracting text from files...')
+        setGenerationProgress(10)
         
         const extractionResult = await ApiClient.uploadAndProcess(files)
+        
+        setGenerationProgress(40)
+        setCurrentStep('Processing extracted content...')
 
         if (!extractionResult.success) {
           throw new Error(extractionResult.error || 'Failed to extract text from files')
         }
 
         if (extractionResult.data) {
+          setGenerationProgress(70)
+          setCurrentStep('Creating study guide sections...')
+          
           // Use the processed result directly
           const processedData = extractionResult.data.processedResult
           const studyGuideSections = convertToStudyGuideSections(processedData, topic)
+          
+          setGenerationProgress(90)
+          setCurrentStep('Finalizing study guide...')
+          
           setStudyGuide(studyGuideSections)
+          
+          setGenerationProgress(100)
+          setCurrentStep('Study guide generated successfully!')
+          
           // Notify parent component about the generated study guide
           if (onStudyGuideGenerated) {
             onStudyGuideGenerated(topic, studyGuideSections)
           }
+          
+          // Reset progress after a brief delay
+          setTimeout(() => {
+            setGenerationProgress(0)
+            setCurrentStep('')
+          }, 1500)
+          
           setIsGenerating(false)
           return
         }
@@ -80,20 +106,42 @@ export function StudyGuideGenerator({
 
       // If we have text content, process it directly
       if (finalText && finalText.length > 100) {
+        setCurrentStep('Analyzing text content...')
+        setGenerationProgress(20)
         
         const processResult = await ApiClient.processText(finalText)
+        
+        setGenerationProgress(60)
+        setCurrentStep('Generating learning modules...')
 
         if (!processResult.success) {
           throw new Error(processResult.error || 'Failed to process text')
         }
 
         if (processResult.data) {
+          setGenerationProgress(80)
+          setCurrentStep('Creating study guide sections...')
+          
           const studyGuideSections = convertToStudyGuideSections(processResult.data, topic)
+          
+          setGenerationProgress(95)
+          setCurrentStep('Finalizing study guide...')
+          
           setStudyGuide(studyGuideSections)
+          
+          setGenerationProgress(100)
+          setCurrentStep('Study guide generated successfully!')
+          
           // Notify parent component about the generated study guide
           if (onStudyGuideGenerated) {
             onStudyGuideGenerated(topic, studyGuideSections)
           }
+          
+          // Reset progress after a brief delay
+          setTimeout(() => {
+            setGenerationProgress(0)
+            setCurrentStep('')
+          }, 1500)
         }
       } else {
         // Provide more helpful error message
@@ -107,6 +155,8 @@ export function StudyGuideGenerator({
     } catch (error) {
       console.error('Study guide generation error:', error)
       setError(error instanceof Error ? error.message : 'Failed to generate study guide')
+      setGenerationProgress(0)
+      setCurrentStep('')
     } finally {
       setIsGenerating(false)
       if (onGeneratingChange) onGeneratingChange(false)
@@ -159,21 +209,53 @@ export function StudyGuideGenerator({
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0
 
   if (!studyGuide) {
-    // Hide generating/spinner UI entirely; only show errors if they occur
-    if (!error) return null
-    return (
-      <Card>
-        <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <Alert
-            message="Error"
-            description={error}
-            type="error"
-            showIcon
-            style={{ marginBottom: 12 }}
-          />
-        </div>
-      </Card>
-    )
+    // Show generation progress or error
+    if (isGenerating) {
+      return (
+        <Card>
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <Space direction="vertical" size="large" style={{ width: '100%' }}>
+              <div>
+                <ClockCircleOutlined style={{ fontSize: 48, color: '#1677ff', marginBottom: 16 }} />
+                <Title level={4} style={{ margin: '0 0 8px 0' }}>Generating Study Guide</Title>
+                <Text type="secondary">{currentStep}</Text>
+              </div>
+              
+              <div style={{ width: '100%', maxWidth: 400, margin: '0 auto' }}>
+                <Progress 
+                  percent={generationProgress} 
+                  strokeColor="#1677ff"
+                  showInfo={true}
+                  format={(percent) => `${percent}%`}
+                />
+              </div>
+              
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                Creating personalized learning modules for "{topic}"...
+              </Text>
+            </Space>
+          </div>
+        </Card>
+      )
+    }
+    
+    if (error) {
+      return (
+        <Card>
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <Alert
+              message="Error"
+              description={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: 12 }}
+            />
+          </div>
+        </Card>
+      )
+    }
+    
+    return null
   }
 
   return (
